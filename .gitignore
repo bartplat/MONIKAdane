@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.Ruserdata
+data/
+*.zip
+*logfile*.txt
+*.pdf
+*.RData
+*.csv
+*.nb.html
+raporty/
+partial/
+inst/doc

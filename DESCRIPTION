@@ -1,0 +1,24 @@
+Package: MONIKAdane
+Title: Generowanie agregatów na potrzeby Monitoringu Karier (MoniKA)
+Version: 5.0.1
+Authors@R: 
+    person("Bartłomiej", "Płatkowski", 
+           email = "b.platkowski@ibe.edu.pl", role = c("aut", "cre"),
+           comment = c(GitHub = "bartplat"))
+Description: Pakiet zawiera zestaw funkcji potrzebnych, aby przejść przez proces
+    obliczania wskaźników zagregowanych (od tabel pośrednich, po wskaźniki) oraz
+    dokumentację na potrzeby Monitoringu Karier (MoniKA).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.3.1),
+    MLASZdane (>= 0.4.1)
+Remotes: bartplat/MLASZdane
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
