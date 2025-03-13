@@ -11,3 +11,4 @@ data/
 raporty/
 partial/
 inst/doc
+tests/testthat/helper_local.R

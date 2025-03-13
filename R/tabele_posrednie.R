@@ -1,4 +1,4 @@
-#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5
+#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
 #' @description
 #' Funkcja rozłącza obiekt z tabelami pośrednimi przygotowanymi przez Tomka na
 #' oddzielne obiekty oraz dokonuje drobnych testów przed rozpoczęciem
@@ -9,7 +9,7 @@
 #' @importFrom dplyr left_join %>% select all_of join_by
 #' @return obiekt `.RData` z tabelami pośrednimi
 #' @export
-rozdziel_tabele <- function(tabele_sciezka = "data/01_tabele_posrednie/tabele-posrednie_2025.RData",
+rozdziel_tabele <- function(tabele_sciezka,
                             rok_ukonczenia = 2024) {
   stopifnot(is.character(tabele_sciezka))
   
@@ -93,7 +93,7 @@ rozdziel_tabele <- function(tabele_sciezka = "data/01_tabele_posrednie/tabele-po
   cat("\nKoniec: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), sep = "")
   cat("\nCzas działania funkcji: ", paste(as.numeric(czas_roznica), attr(czas_roznica, "units")), "\n", sep = "")
 }
-#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5
+#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
 #' @description
 #' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
 #' dalszej części procesu przechodzenia od tabel pośrednich do generowania
@@ -106,10 +106,10 @@ rozdziel_tabele <- function(tabele_sciezka = "data/01_tabele_posrednie/tabele-po
 #' @return multiple `.RData` objects
 #' @seealso [rozdziel_tabele()]
 #' @export
-przygotuj_tabele_posrednie <- function(tabele_sciezka = "data/01_tabele_posrednie/",
+przygotuj_tabele_posrednie <- function(tabele_sciezka,
                                        rok_ukonczenia = 2024) {
   tryCatch({
-    log_file = paste0("../przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
+    log_file = paste0("przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
     sink(log_file, split = TRUE)
     czas_start = Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
@@ -250,7 +250,7 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka = "data/01_tabele_posredni
   )
   # file.show(log_file, title = "Plik log")
 }
-#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5
+#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
 #' @description
 #' Funkcja uzupełnia brakujące dane w zmiennej `powiat_sr_wynagrodzenie` w
 #' tabeli pośredniej `p3`. Do tej pory spotkaliśmy się z dwoma rodzajami braków
@@ -294,7 +294,7 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka = "data/01_tabele_posredni
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @importFrom MLASZdane wskaznik_bdl pobierz_dane_bdl przeksztalc_dane_bdl
 #' @export
-uzupelnij_wynagrodzenie_powiat <- function(tabela_p3 = "data/01_tabele_posrednie/p3_raw.RData",
+uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
                                            rok_ukonczenia = 2024, wynagrodzenia = NULL, force = FALSE) {
   stopifnot(is.character(tabela_p3),
             is.numeric(rok_ukonczenia),
