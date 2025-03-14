@@ -2,7 +2,7 @@
 % Please edit documentation in R/tabele_posrednie.R
 \name{przygotuj_tabele_posrednie}
 \alias{przygotuj_tabele_posrednie}
-\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5}
+\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
 przygotuj_tabele_posrednie(tabele_sciezka, rok_ukonczenia = 2024)
 }

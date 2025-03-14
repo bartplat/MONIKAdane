@@ -2,7 +2,7 @@
 % Please edit documentation in R/tabele_posrednie.R
 \name{uzupelnij_wynagrodzenie_powiat}
 \alias{uzupelnij_wynagrodzenie_powiat}
-\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5}
+\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
 uzupelnij_wynagrodzenie_powiat(
   tabela_p3,

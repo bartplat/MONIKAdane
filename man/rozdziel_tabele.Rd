@@ -2,7 +2,7 @@
 % Please edit documentation in R/tabele_posrednie.R
 \name{rozdziel_tabele}
 \alias{rozdziel_tabele}
-\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier - Edycja 5}
+\title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
 rozdziel_tabele(tabele_sciezka, rok_ukonczenia = 2024)
 }
