@@ -1,11 +1,10 @@
 test_that("Czy tabele pośrednie ładują się z zewnętrznej lokalizacji", {
   test_data <- local_test_data()
-  skip_if(is.null(test_data), "Nie udało się załadować danych z zewnętrznej lokalizacji.")
+  skip_if(is.null(test_data), message = "Nie udało się załadować danych z zewnętrznej lokalizacji.")
   
-  # result <- your_package_function(test_data$dataset1)
-  # expect_equal(result$some_value, expected_value)
+  tabele_nazwy = c("p1", "p2", "p3", "p4", "p5")
   
-  # # Now you can safely use the data
-  # result <- your_package_function(test_data$dataset1)
-  # expect_equal(result$some_value, expected_value)
+  test_that("Tabele pośrednie zostały załadowane do środowiska testowego", {
+    expect_in(ls(), tabele_nazwy)
+  })
 })
