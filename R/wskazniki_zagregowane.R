@@ -31,7 +31,7 @@ definicje_podzialu <- function(p4, rodzaj_wsk, rok_ukonczenia = 2024) {
     "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1
   )
   
-  # tutaj dać check na kolumny
+  check_kolumny_tabele(p4, "p4", force = TRUE)
   
   stopifnot(
     length(unique(p4$rok_abs)) == 1,
@@ -82,6 +82,4 @@ definicje_podzialu <- function(p4, rodzaj_wsk, rok_ukonczenia = 2024) {
     
     return(grupy)
   }
-  
-  
 }
