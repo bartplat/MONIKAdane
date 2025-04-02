@@ -12,3 +12,5 @@ raporty/
 partial/
 inst/doc
 tests/testthat/helper_local.R
+R/helpers.R
+man/parametry.Rd
