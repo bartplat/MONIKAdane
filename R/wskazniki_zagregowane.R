@@ -22,12 +22,12 @@
 #' @return ramka danych będąca zbiorem definicji podziałów na agregaty
 #' @export
 definicje_podzialu <- function(p4, rodzaj_wsk, rok_ukonczenia = 2024) {
-  rodzaje = c("szk_god", "god1_god2", "szkozaw", "woj")
+  rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
   
   stopifnot(
     is_tibble(p4) | is.data.frame(p4),
     nrow(p4) > 1,
-    rodzaje %in% rodzaj_wsk,
+    rodzaj_wsk %in% rodzaje,
     "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1
   )
   
@@ -164,7 +164,7 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
   
   stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
             is.character(sciezka_tab_posrednie) & length(sciezka_tab_posrednie) > 0,
-            rodzaje %in% rodzaj_wsk,
+            rodzaj_wsk %in% rodzaje,
             "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
             is.numeric(rok_ukonczenia),
             is_tibble(grupy_df) | is.data.frame(grupy_df),
@@ -218,4 +218,211 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
     
   }
 }
-
+#' @title Funkcja generująca plik ze ścieżkami do skryptów
+#' @description
+#' Funkcja zwraca plik txt będący spisem ścieżek do poszczególnych skryptów,
+#' które tworzone są za pomocą funkcji [skrypt_wzor()] - mogą również być
+#' stworzone w inny sposób, ale ważne żeby ich nazewnictwo i struktura były
+#' zgodne z tymi, które zwraca wspomniana funkcja. 
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej ma być
+#' zapisany plik source - jest to równocześnie ścieżka, w której powinny
+#' znajdować się skrypty według podziału, który ma być zastosowany w
+#' zrównoleglaniu
+#' @param rodzaj_wsk ciąg znaków określający dla jakiego rodzaju wskaźników
+#' należy zwórócić definicję podziału na grupy. Możliwe wartości to `"szk_god"`
+#' lub `"szkozaw"`. Dla poozstałych wartości funkcja nic nie zwraca.
+#' @return plik txt zawierający ścieżki do skryptów R liczących wskaźniki
+#' zagregowane
+#' @export
+#' @seealso [skrypt_bat()]
+#' @seealso [skrypt_wzor()]
+plik_source <- function(sciezka_docelowa, rodzaj_wsk) {
+  rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
+  stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
+            rodzaj_wsk %in% rodzaje,
+            "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
+            dir.exists(sciezka_docelowa))
+  
+  if (!any(grepl("^skrypt_N", list.files(sciezka_docelowa)))) {
+    stop(paste0("W podanej lokalizacji (", sciezka_docelowa, ") nie znaleziono plików ze skryptami, których nazwy zaczynają się od \"skrypt_N\""))
+  }
+  
+  if (rodzaj_wsk == c("szk_god", "szkozaw")) {
+    plik <- paste(gsub("/", "\\\\",
+                 paste0(sciezka_docelowa,
+                        list.files(sciezka_docelowa)[grep("^skrypt_N", list.files(sciezka_docelowa))])),
+                 collapse = "\n", sep = "")
+    writeLines(plik, paste0(sciezka_docelowa, "source_", rodzaj_wsk, ".txt"))
+  } else {
+    message(paste0("Dla wskaźników *", rodzaj_wsk, "* funkcja nic nie zwraca."))
+  }
+}
+#' @title Tworzenie skryptów `.bat` uruchamiających zrównoleglanie obliczeń
+#' @description
+#' Funkcja zwraca skrypt `.bat`, który uruchamia tyle niezależnych sesji R, ile
+#' wierszy zawiera plik "source" zawierający ścieżki do skryptów R służących
+#' zrównolegleniu obliczeń.
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej ma być
+#' zapisany plik source - jest to równocześnie ścieżka, w której powinny
+#' znajdować się skrypty według podziału, który ma być zastosowany w
+#' zrównoleglaniu
+#' @param rodzaj_wsk ciąg znaków określający dla jakiego rodzaju wskaźników
+#' należy zwórócić definicję podziału na grupy. Możliwe wartości to `"szk_god"`
+#' lub `"szkozaw"`. Dla poozstałych wartości funkcja nic nie zwraca.
+#' @return skrypt `.bat` uruchamiający skrypty w oddzielnych sesjach R
+#' @export
+skrypt_bat <- function(sciezka_docelowa, rodzaj_wsk) {
+  rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
+  stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
+            rodzaj_wsk %in% rodzaje,
+            "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
+            dir.exists(sciezka_docelowa))
+  
+  if (rodzaj_wsk %in% c("szk_god", "szkozaw")) {
+    bat_script <- paste0(
+      "@echo off",
+      "\nsetlocal enabledelayedexpansion",
+      "\n\n:: Path to the txt file",
+      paste0("\nset file=", normal_windows_path(sciezka_docelowa), "source_", rodzaj_wsk, ".txt"),
+      "\n\n:: Read the file line by line",
+      "\nfor /f \"usebackq delims=\" %%A in (\"%file%\") do (",
+      "\n    :: Remove quotes from the line",
+      "\n    set line=%%A",
+      "\n\n    :: Run the R script using Rscript.exe simultaneously",
+      "\n    start \"\" \"C:\\PROGRA~1\\R\\R-4.4.1\\bin\\x64\\Rscript.exe\" !line!",
+      "\n)",
+      "\n\nendlocal",
+      "\npause"
+    )
+    writeLines(bat_script, paste0(sciezka_docelowa, "generuj_", rodzaj_wsk,".bat"))
+  } else {
+    message(paste0("Dla wskaźników *", rodzaj_wsk, "* funkcja nic nie zwraca."))
+  }
+}
+#' @title Łączenie częściowych zbiorów wskaźników zagregowanych
+#' @description
+#' Funkcja służy do scalenia częściowych zbiorów, które powstają podczas pracy
+#' skryptów `.bat` (zwracanych przez funkcję [skrypt_bat()]). Zbiory są łączone,
+#' a czasem dodawane są dodatkowe zmienne. 
+#' 
+#' 
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
+#' zapisany plik source - jest to równocześnie ścieżka, w której powinny
+#' znajdować się skrypty według podziału, który ma być zastosowany w
+#' zrównoleglaniu
+#' 
+#' @param sciezka_zapisu ścieżka do folderu w formacie tekstowym, w którym ma
+#' być zapisany połączony zbiór
+#' @param rodzaj_wsk wektor tekstowy określający dla jakiego rodzaju wskaźników
+#' należy przeprowadzić łącznie zbiorów. Możliwe wartości to `"szk_god"` lub
+#' `"szkozaw"`. Dla poozstałych wartości funkcja nie zwraca nic lub zwraca błąd
+#' (jeżeli wartość jest spoza zbioru sensownych wartości).
+#' @return zapis wskaźników zagregowanych
+#' @export
+zlacz_partial <- function(sciezka_docelowa, sciezka_zapisu, rodzaj_wsk) {
+  rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
+  stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
+            is.character(sciezka_zapisu) & length(sciezka_zapisu) > 0,
+            rodzaj_wsk %in% rodzaje,
+            "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
+            dir.exists(sciezka_docelowa))
+  
+  sciezka_docelowa <- paste0(sciezka_docelowa, "partial/")
+  
+  if (!any(grepl("^wsk_.*\\.RData$", list.files(sciezka_docelowa)))) {
+    stop(paste0("W podanej lokalizacji (", sciezka_docelowa, ") nie znaleziono zbiorów częściowych.\nSprawdź czy na pewno dla tego rodzaju wskaźników są one generowane."))
+  }
+  
+  if (rodzaj_wsk == "szk_god") {
+    zbiory <- list.files(path = sciezka_docelowa, pattern = "\\.RData$", full.names = TRUE)
+    szk_lista <- list()
+    god_lista <- list()
+    
+    for (i in 1:length(zbiory)) {
+      env <- new.env()
+      load(zbiory[[i]], envir = env)
+      obiekty <- ls(env)
+      szk_lista[[i]] <- get(obiekty[grepl("szk", obiekty)], envir = env)
+      god_lista[[i]] <- get(obiekty[grepl("god", obiekty)], envir = env)
+    }
+    
+    szk <- do.call(rbind, szk_lista)
+    god <- do.call(rbind, god_lista)
+    
+    szk <- dodaj_odmiany_szk(szk)
+    
+    sciezka_zapisu <- ifelse(grepl("/^", sciezka_zapisu),
+                             paste0(sciezka_zapisu, "wskazniki_szk_god.RData"),
+                             paste0(sciezka_zapisu, "/wskazniki_szk_god.RData"))
+    save(szk, god, file = sciezka_zapisu)
+  } else if (rodzaj_wsk == "szkozaw") {
+    zbiory <- list.files(path = sciezka_docelowa, pattern = "\\.RData$", full.names = TRUE)
+    szkozaw_lista <- list()
+    
+    for (i in 1:length(zbiory)) {
+      env <- new.env()
+      load(zbiory[[i]], envir = env)
+      obiekty <- ls(env)
+      szkozaw_lista[[i]] <- get(obiekty, envir = env)
+    }
+    
+    szkozaw <- do.call(rbind, szkozaw_lista)
+    
+    sciezka_zapisu <- ifelse(grepl("/^", sciezka_zapisu),
+                             paste0(sciezka_zapisu, "wskazniki_szkozaw.RData"),
+                             paste0(sciezka_zapisu, "/wskazniki_szkozaw.RData"))
+    save(szkozaw, file = sciezka_zapisu)
+  } else {
+    message(paste0("Dla wskaźników *", rodzaj_wsk, "* funkcja nic nie zwraca."))
+  }
+}
+#' @title Dodawanie do zbioru `szk` zmiennej zawierającej odmiany rzeczowników
+#' @description
+#' Funkcja używana w ramach funkcji [zlacz_partial()]. Na podstawie zmiennych ze
+#' zbioru wskaźników zagregowanch `szk` określa odmianę rzeczowników, które
+#' następnie używane są w raportach szkolnych.
+#' @param obiekt_szk zbiór wskaźników zagregowanch `szk`
+#' @importFrom dplyr group_by reframe case_when row_number left_join
+#' @importFrom tidyr nest
+#' @return zbiór wskaźników zagregowanch `szk` z dołączoną zmienną `odmiany`
+#' @export
+dodaj_odmiany_szk <- function(obiekt_szk) {
+  odmiany <- szk %>% 
+    group_by(id_szk) %>%
+    reframe(
+      abs = ifelse(l_abs %in% 1, " absolwenta", " absolwentów"),
+      kob = if (l_kobiet %in% c(0:19)) {
+        case_when(
+          l_kobiet %in% 0 ~ "kobiet",
+          l_kobiet %in% 1 ~ "kobietę",
+          l_kobiet %in% c(2:4) ~ "kobiety",
+          l_kobiet %in% c(5:19) ~ "kobiet")
+      } else {
+        case_when(
+          (l_kobiet %% 10) %in% c(0, 1, 5:9) ~ "kobiet",
+          (l_kobiet %% 10) %in% c(2:4) ~ "kobiety")
+      },
+      abs_opi = ifelse(l_abs_zrodla[[row_number()]]$n_opi %in% 1, " absolwenta", " absolwentów"),
+      abs_zus = ifelse(l_abs_zrodla[[row_number()]]$n_zus %in% 1, " absolwenta", " absolwentów"),
+      osob_zus = if (l_abs_zrodla[[row_number()]]$n_zus %in% c(0:19)) {
+        case_when(
+          l_abs_zrodla[[row_number()]]$n_zus %in% 0 ~ " osób",
+          l_abs_zrodla[[row_number()]]$n_zus %in% 1 ~ " osoba",
+          l_abs_zrodla[[row_number()]]$n_zus %in% c(2:4) ~ " osoby",
+          l_abs_zrodla[[row_number()]]$n_zus %in% c(5:19) ~ " osób")
+      } else {
+        case_when(
+          (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(0, 1, 5:9) ~ " osoby",
+          (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(2:4) ~ " osób")
+      }
+    )
+  
+  odmiany <- odmiany %>% 
+    nest(.by = id_szk, .key = "odmiany")
+  
+  
+  obiekt_szk <- obiekt_szk %>% 
+    left_join(odmiany, join_by(id_szk))
+  
+  return(obiekt_szk)
+}
