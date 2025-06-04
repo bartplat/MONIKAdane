@@ -1,0 +1,89 @@
+---
+title: "Tworzenie tabel pośrednich"
+author: "Bartłomiej Płatkowski"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tworzenie_tabel_posrednich}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(MONIKAdane)
+```
+
+# Określenie parametrów
+
+W tym dokumencie będziemy pracować na różnych lokalizacjach docelowych. Poniżej pokazano przykładową konstrukcję obiektu przechowującego lokalizacje oddające logikę przechowywania zbiorów danych. Wiele funkcji w pakiecie wymaga podawania ścieżek do plików czy folderów, ale ze względu na prywatność i kompatybilność tego dokumentu nie są one tutaj podane w rzeczywistej formie, ale jako symbol zastępczy (*ang. placeholder*). Użytkownik może sam odtworzyć sobie obiekt `parametry` wklejając tam swoje ścieżki, dzięki czemu prezentowane funkcje będą działać na jego komputerze.
+
+```{r params, eval=FALSE}
+parametry <- list(
+  plik_tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/tabele_posrednie.RData", # ścieżka do pliku z surowymi tabelami pośrednimi
+  sciezka_zapis_dane = list(
+    tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie" # ścieżka do folderu, w którym chcemy zapisać przetworzone tabele pośrednie
+  )
+)
+```
+
+```{r stealh_params, eval=FALSE, echo=FALSE}
+parametry <- parametry()
+```
+
+# Wczytywanie surowych danych
+
+Jako *surowe dane* rozumiem tutaj tabele pośrednie, które są zwracane za pomocą funkcji pakietu [MLASdaneAdm](https://github.com/tzoltak/MLASdaneAdm), czyli, przede wszystkim, są one obiektem-listą zawierającą 5 elementów, którymi są poszczególne tabele pośrednie. W pierszym kroku, za pomocą funkcji `rozdziel_tabele()` przeprowadzane jest sprawdzenie czy obiekt-lista zawiera wszystkie wymagane tabele (powinno być ich 5 o nazwach od "p1" do "p5"). Następnie  obiekt-lista jest rozdzielany na oddzielne tabele pośrednie, a zbiory są odfiltrowywane do roku monitoringu. Ma to na celu ograniczenie wielkości zbioru, bo aktualnie raporty szkolne w Monitoringu Karier tworzone są tylko dla danych rok po ukończeniu szkoły, a dane, z któymi pracujemy pokazują sytuację edukacyjno-zawodową po roku, po dwóch latach i po pięciu latach od ukończenia szkoły, a więc znaczna część tych danych nie jest używana w kontekście raportów szkolnych. Funkcja `rozdziel_tabele()` dołącza jeszcze niektóre istotne zmienne z tabeli `p4` do tabel `p2` i `p3` - będą one przydatne w kolejnych etapach przetwarzania danych. Na koniec rozdzielone tabele są zapisywane na dwa sposoby:
+
+1. Jako odzielne pliki o nazwach `p[numer tabeli]_raw.RData`, np. `p3_raw.RData`. Przyrostek "_raw" pełni istotną rolę w nazewnictwie, ponieważ funkcje używane na kolejnych etapach pracy z tabelami pośrednimi będą szukać plików z tym przyrostkiem i to je będą traktować jako zbiory, na których mają zostać przeprowadzone kolejne przekształcenia.
+2. Jako jeden obiekt zawierający wszystkie pięć tabel pośrednich - również z przytostkiem "_raw": `tabele_posrednie_raw.RData`
+
+Mając zatem surowy plik z tabelami pośrednimi możemy przystąpić do wstępnej pracy ze zbiorami danych.
+
+```{r, eval=FALSE}
+rozdziel_tabele(parametry, rok_ukonczenia = 2023)
+```
+
+Wynikiem działania tej funkcji są oddzielnie zapisane i wstępnie przetworzone zbiory, które zapisane zostały w ścieżce podanej jako pierwszy argument funkcji. Zbiory te zostaną użyte w następnym kroku. Dodatkowo, w trakcie działania funkcji, zwracane są przez nią informacje o tym, co w danycm momencie robi funkcja oraz znaczniku czasowym.
+
+# Przetwarzanie tabel pośrednich do finalnej postaci
+
+Mając już rozdzielone i ograniczone tylko do jednego rocznik absolwentów dane możemy przystąpić do głównej części, czyli przetwarzania danych. W tym celu wykorzystamy funkcję `przygotuj_tabele_posrednie()`. Jest to obszerna funkcja służąca do przekształcania tabel pośrednich do ich finalnej postaci.
+
+Funkcja `przygotuj_tabele_posrednie()`:
+
+- Wczytuje tabele pośrednie przygotowane przez funkcję `rozdziel_tabele()` (wymaga stosownego nazewnictwa poszczególnych tabel - przyrostek "_raw")
+- Usuwa zduplikowanych absolwentów (jesli tacy istnieją w tabeli `p4`) i zwraca informację o liczbie usuniętych duplikatów
+- Konwertuje teryt powiaty na format 4-cyfrowy (tabela `p3`)
+- Usuwa twarde spacje w nazwach zawodów (tabela `p4`)
+- Jeśli wykryje, że zawody eksperymentalne mają braki w nazwach branży - zwraca plik `.csv` z mapowaniem zawodów eksperymentalnych na ich branże, który należy uzupełnić i uruchomić ponownie funkcję
+- Sprawdza czy dane o średnich wynagrodzeniach w powiecie są kompletne - jeśli nie, zwraca przypomnienie o uzupełnieniu ich (za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()`)
+- Rekoduje typ szkoły "Bednarska Szkoła Realna" na "Liceum ogólnokształcące"
+- Dodaje zmienne grupujące do `p2` i `p3`
+- Zapisuje gotowe tabele pośrednie
+
+```{r, eval=FALSE}
+przygotuj_tabele_posrednie(parametry, rok_ukonczenia = 2023)
+```
+
+Jeśli funkcja `przygotuj_tabele_posrednie()` wykryje braki danych w zmiennej `branza` dla zawodów eksperymentalnych, działanie funkcji zostanie zatrzymane i zostanie zwrócona informacja o tym fakcie oraz tabela w pliku `.csv` z mapowaniem, które należy uzupełnić. Dodatkowo, jeśli zostaną wykryte braki danych w średnich wynagrodzeniach w powiecie, to za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()` zostaną uzupełnione.
+
+W powyższym przykładzie funkcja zwróciła dwa błędy: o braku branż przypisanych do absolwentów oraz o brakach w zmiennej ze średnimi wynagrodzeniami w powiecie. Wraz z błędem o brakach dancyh w zmiennej `branza` tworzony jest plik `"brakujace_branze.csv"` (w tym samym katalogu, w którym znajduje się skrypt uruchamiający funkcję), w którym należy uzupełnić brakujące branże ręcznie - mając uzupełniony plik z mapowaniem zawodów na branże, przy kolejnym wywołaniu `przygotuj_tabele_posrednie()` funkcja uzupełni brakujące branże na podstawie mapowania i przejdzie do dalszych przekształceń. Natomiast brakujące wynagrodzenia w powiecie należy uzupełnić za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()`.
+
+```{r, eval=FALSE}
+sciezka_p3 <- paste0(parametry$sciezka_zapis_dane$tabele_posrednie, "p3_raw.RData")
+uzupelnij_wynagrodzenie_powiat(sciezka_p3, rok_ukonczenia = 2023)
+```
+
+Po dokonaniu wyszystkich uzupełnień należy ponownie uruchomić funkcję `przygotuj_tabele_posrednie()` i, jeśli przejdzie pomyślnie (bez błędów) cały proces przygotowywania tabel pośrednich, to zostaną one zapisane i ten etap pracy z danymi zostanie ukończony.
+
+```{r, eval=FALSE}
+przygotuj_tabele_posrednie(parametry, rok_ukonczenia = 2023)
+```
+Następnym krokiekm, opisanym w innym dokumencie, będzie obliczanie wskaźników zagregowanych na podstawie tabel pośrednich wygenerowanych z użyciem funkcji opisanych w tym dokumencie.

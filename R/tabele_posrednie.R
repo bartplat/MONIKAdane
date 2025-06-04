@@ -3,19 +3,21 @@
 #' Funkcja rozłącza obiekt z tabelami pośrednimi przygotowanymi przez Tomka na
 #' oddzielne obiekty oraz dokonuje drobnych testów przed rozpoczęciem
 #' przygotowywania tabel do dalszych etapów pracy.
-#' @param tabele_sciezka ścieżka do tabel pośrednich
+#' @param parametry lista zawierająca ścieżki do plików/katalogów
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
-#' @importFrom dplyr left_join %>% select all_of join_by
+#' @importFrom dplyr %>% left_join select all_of join_by
 #' @return obiekt `.RData` z tabelami pośrednimi
 #' @export
-rozdziel_tabele <- function(tabele_sciezka,
+rozdziel_tabele <- function(parametry,
                             rok_ukonczenia = 2024) {
-  stopifnot(is.character(tabele_sciezka))
+  stopifnot(is.list(parametry),
+            is.character(parametry$plik_tabele_posrednie),
+            grepl(".RData$", parametry$plik_tabele_posrednie) | grepl("rds$", parametry$plik_tabele_posrednie))
   
   czas_start <- Sys.time()
   cat("\nRozpoczęto wczytywanie tabel pośrednich: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), sep = "")
-  obiekt_tabele <- load(tabele_sciezka)
+  obiekt_tabele <- load(parametry$plik_tabele_posrednie)
   
   if (length(obiekt_tabele) != 1) stop(paste0("Bład: Obiekt zawierający tabele pośrednie zawiera więcej niż jeden obiekt. Są to obiekty:\n"),
                                       paste(names(obiekt_tabele), collapse = "\n"))
@@ -83,10 +85,10 @@ rozdziel_tabele <- function(tabele_sciezka,
   # }
   cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
   for (i in tabele) {
-    save(list = i, file = paste0("data/01_tabele_posrednie/", i, "_raw.RData"))
+    save(list = i, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie, i, "_raw.RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Tabela pośrednia *", i, "* została zapisana.", sep = "")
   }
-  save(p1, p2, p3, p4, p5, file = "data/01_tabele_posrednie/tabele_posrednie_raw.RData")
+  save(p1, p2, p3, p4, p5, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie, "tabele_posrednie_raw.RData"))
   cat("\nWszystkie tabele pośrednie zostały zapisane do obiektu `tabele_posrednie_raw.RData`.")
   czas_stop = Sys.time()
   czas_roznica = round(czas_stop - czas_start, 2)
@@ -98,7 +100,7 @@ rozdziel_tabele <- function(tabele_sciezka,
 #' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
 #' dalszej części procesu przechodzenia od tabel pośrednich do generowania
 #' automatycznych raportów. 
-#' @param tabele_sciezka ścieżka do tabel pośrednich
+#' @param parametry lista zawierająca ścieżki do plików/katalogów
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
 #' @importFrom dplyr %>% filter group_by count filter pull select distinct
@@ -106,7 +108,7 @@ rozdziel_tabele <- function(tabele_sciezka,
 #' @return multiple `.RData` objects
 #' @seealso [rozdziel_tabele()]
 #' @export
-przygotuj_tabele_posrednie <- function(tabele_sciezka,
+przygotuj_tabele_posrednie <- function(parametry,
                                        rok_ukonczenia = 2024) {
   tryCatch({
     log_file = paste0("przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
@@ -114,19 +116,21 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
     czas_start = Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     
-    stopifnot(is.character(tabele_sciezka),
+    stopifnot(is.list(parametry),
               is.numeric(rok_ukonczenia),
               rok_ukonczenia > 2021)
     
     nazwy_tabel = c("p1_raw.RData", "p2_raw.RData", "p3_raw.RData", "p4_raw.RData", "p5_raw.RData")
     
-    if (all(nazwy_tabel %in% list.files(tabele_sciezka))) {
+    if (all(nazwy_tabel %in% list.files(parametry$sciezka_zapis_dane$tabele_posrednie))) {
       for (i in nazwy_tabel) {
-        load(paste0(tabele_sciezka, i))
+        load(paste0(parametry$sciezka_zapis_dane$tabele_posrednie, i))
         cat("\n", format(Sys.time(), "%H:%M:%S"), " - tabela pośrednia *", i, "* została pomyślnie wczytana.", sep = "")
       }
     } else {
-      stop(paste0("\nBłąd: Brak tabel pośrednich z sufiksem \"_raw\".\nFunkcja oczekuje w folderze: \"", tabele_sciezka, "\" tabel o następujących nazwach:\n",
+      stop(paste0("\nBłąd: Brak tabel pośrednich z sufiksem \"_raw\".\nFunkcja oczekuje w folderze: \"",
+                  parametry$sciezka_zapis_dane$tabele_posrednie,
+                  "\" tabel o następujących nazwach:\n",
                   paste(nazwy_tabel, collapse = "\n"), "\nTabele o takich nazwach zwracane są np. przez funkcję `rozdziel_tabele()`."))
     }
     
@@ -159,17 +163,9 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
       cat("\nBrak zduplikowanych absolwentów w zbiorze.")
     }
     
-    # konwersja terytu na format 4-cyfrowy
-    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Konwersja terytu powiatu na format 4-cyfrowy.", sep = "")
-    p3 <- p3 %>% 
-      mutate(teryt_pow_szk = floor(teryt_pow_szk / 100))
-    
-    # usuwanie twardych spacji w nazwach zawodów
-    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Usuwanie twardych spacji w nazwach zawodów.", sep = "")
-    p4$nazwa_zaw <- gsub("\u00A0", " ", p4$nazwa_zaw, fixed = TRUE)
-    
     # przypomnienie o rekodowaniu zawodów eksperymentalnych
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie czy w zmiennej `p4$branza` występują braki danych.", sep = "")
+    branze_braki <- NULL
     branza_na <- p4 %>% 
       select(id_abs, id_szk, nazwa_zaw, branza) %>% 
       filter(!is.na(p4$nazwa_zaw) & is.na(p4$branza))
@@ -180,13 +176,13 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
           distinct()
         write.csv2(branza_na, "brakujace_branze.csv", row.names = FALSE)
         cat("\nLista zawodów z brakującymi branżami została zapisana do pliku \"brakujace_branze.csv\".\n")
-        stop(paste0(nrow(branza_na), " absolwentów ma przypisany zawód, ale nie ma przypisanej branży. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie."))
+        branze_braki <- paste0("* ", nrow(branza_na), " absolwentów ma przypisany zawód, ale nie ma przypisanej branży. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie.")
       } else {
         branza_na <- read.csv2("brakujace_branze.csv")
         stopifnot(is.data.frame(branza_na),
                   c("nazwa_zaw", "branza") %in% names(branza_na))
         if (sum(is.na(branza_na$branza)) != 0) {
-          stop("Znaleziono plik \"brakujace_branze.csv\", ale zawiera on braki danych w kolumnie `branza`. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie.")
+          branze_braki <- "* Znaleziono plik \"brakujace_branze.csv\", ale zawiera on braki danych w kolumnie `branza`. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie."
         } else {
           p4 <- p4 %>% 
             left_join(branza_na,
@@ -202,11 +198,32 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
     
     # sprawdzanie czy nie brakuje wynagrodzeń
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie kompletności danych o średnich wynagrodzeniach w powiecie (zmienna`p3$powiat_sr_wynagrodzenie`).", sep = "")
+    wynagrodzenia_braki <- NULL
     powiat_sr_wynagrodzenie_na <- p3 %>% 
       filter(is.na(powiat_sr_wynagrodzenie))
     if (nrow(powiat_sr_wynagrodzenie_na) > 0) {
-      stop("\nBraki danych w zmiennej `p3$powiat_sr_wynagrodzenie` - przed dalszą pracą należy je uzupełnić.\nMożliwe, że brakuje danych w powiecie Jastrzębie-Zdrój (teryt: 2467)")
+      wynagrodzenia_braki <- "\n* Braki danych w zmiennej `p3$powiat_sr_wynagrodzenie` - przed dalszą pracą należy je uzupełnić (np. za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()`).\nMożliwe, że brakuje danych w powiecie Jastrzębie-Zdrój (teryt: 2467)"
     }
+    
+    if (any(!is.null(branze_braki), !is.null(wynagrodzenia_braki))) {
+      stop(paste(branze_braki, wynagrodzenia_braki, collapse = "\n"))
+    }
+    
+    # konwersja terytu na format 4-cyfrowy
+    teryty_p3 <- as.character(p3$teryt_pow_szk)[1:1000]
+    if (any(nchar(teryty_p3) %in% c(5, 6))) {
+      cat("\n", format(Sys.time(), "%H:%M:%S"), " - Konwersja terytu powiatu na format 4-cyfrowy.", sep = "")
+      p3 <- p3 %>% 
+        mutate(teryt_pow_szk = floor(teryt_pow_szk / 100))
+    } else if (any(nchar(teryty_p3) %in% c(3, 4))) {
+      cat("\n", format(Sys.time(), "%H:%M:%S"), " - Terytu powiatu ma prawidłowy format 4-cyfrowy.", sep = "")
+    } else {
+      stop("Nieznany format terytu powiatu w tabeli `p3` - powinien być 5 lub 6-cio cyfrowy albo 3 lub 4 cyfrowy.")
+    }
+    
+    # usuwanie twardych spacji w nazwach zawodów
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Usuwanie twardych spacji w nazwach zawodów.", sep = "")
+    p4$nazwa_zaw <- gsub("\u00A0", " ", p4$nazwa_zaw, fixed = TRUE)
     
     # rekodowanie bednarskiej
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie czy w danych występuje Bednarska Szkoła Realna - rekodowanie na Liceum ogólnokształcące.", sep = "")
@@ -229,11 +246,14 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
     
     # zapis
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
-    save(p1, p2, p3, p4, p5, file = paste0("data/01_tabele_posrednie/tabele_posrednie_wrz2024_rokabs", rok_ukonczenia, ".RData"))
+    save(p1, p2, p3, p4, p5, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+                                           "tabele_posrednie_wrz2024_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano PEŁNE tabele p1:p5.", sep = "")
-    save(p3, p4, file = paste0("data/01_tabele_posrednie/tabele_posrednie_wrz2024_p3p4_rokabs", rok_ukonczenia, ".RData"))
+    save(p3, p4, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+                               "tabele_posrednie_wrz2024_p3p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p3:p4.", sep = "")
-    save(p2, p3, p4, file = paste0("data/01_tabele_posrednie/tabele_posrednie_wrz2024_p2-p4_rokabs", rok_ukonczenia, ".RData"))
+    save(p2, p3, p4, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+                                   "tabele_posrednie_wrz2024_p2-p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p2:p4.", sep = "")
     
     czas_stop <- Sys.time()
@@ -241,8 +261,8 @@ przygotuj_tabele_posrednie <- function(tabele_sciezka,
     cat("\nKoniec: ", format(czas_stop, "%Y.%m.%d %H:%M:%S"), "\nCzas działania funkcji: ", paste(as.numeric(czas_roznica), attr(czas_roznica, "units")), "\n", sep = "")
   },
   error = function(e) {
-    cat("\nSkrypt zwrócił błąd: \n", conditionMessage(e), "\n")
-    cat("Traceback:\n")
+    cat("\nSkrypt zwrócił błąd: \n", conditionMessage(e), "\n", sep = "")
+    cat("\nTraceback:\n")
     traceback()},
   finally = {
     sink()
@@ -320,7 +340,7 @@ uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
               nrow(wynagrodzenia) > 0)
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dołączanie danych z pliku przekazanego w argumencie funkcji `wynagrodzenie`.", sep = "")
     # check na strukturę tabeli potem dołączenie danych, znów sprawdzanie braków (jeśli są to chyba lecimy dalej z uzupełnianiem) i save(p3) jeśli wszystko okej
-    save(p3, file = "data/01_tabele_posrednie/p3_raw.RData")
+    save(p3, file = tabela_p3)
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Uzupełniono i zapisano na podstawie pliku przekazanego w argumencie `wynagrodzenie`.", sep = "")
   } else {
     # tu jednak chyba bym wolał uzupełniać braki z BDLu dla każdego roku rok_abs, a nie tylko dla obecnego jak teraz.
@@ -353,7 +373,7 @@ uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
         left_join(wskaznikiPow %>% select(teryt, powiat_sr_wynagrodzenie = wynagrodzenie_2023),
                   join_by(teryt_pow_szk == teryt))
       if (sum(is.na(p3$powiat_sr_wynagrodzenie)) == 0) {
-        save(p3, file = "data/01_tabele_posrednie/p3_raw.RData")
+        save(p3, file = tabela_p3)
         cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dołączono dane o wynagrodzeniach z BDL.", sep = "")
       } else {
         stop("\nDołączono pełne dane z BDL, ale nadal wsytępuja braki w `p3$powiat_sr_wynagrodzenie`.")
@@ -414,7 +434,7 @@ uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
                   join_by(teryt_pow_szk == teryt))
       
       if (sum(is.na(p3$powiat_sr_wynagrodzenie)) == 0) {
-        save(p3, file = "data/01_tabele_posrednie/p3_raw.RData")
+        save(p3, file = tabela_p3)
         cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dołączono dane o wynagrodzeniach z BDL.", sep = "")
       } else {
         stop("\nDołączono dane z BDL po imputacji ze względu na dynamikę zmiany wynagrodzenia w województwie, ale nadal wsytępuja braki w `p3$powiat_sr_wynagrodzenie`.")

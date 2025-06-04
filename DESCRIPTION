@@ -13,6 +13,10 @@ Encoding: UTF-8
 Depends:
     R (>= 4.3.1),
     MLASZdane (>= 0.4.1)
+Imports:
+    dplyr (>= 1.1.4),
+    tibble (>= 3.2.1),
+    tidyr (>= 1.3.1)
 Remotes: bartplat/MLASZdane
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -22,3 +26,5 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+LazyData: true
+Language: pl
