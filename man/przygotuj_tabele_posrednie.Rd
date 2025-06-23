@@ -4,10 +4,11 @@
 \alias{przygotuj_tabele_posrednie}
 \title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
-przygotuj_tabele_posrednie(parametry, rok_ukonczenia = 2024)
+przygotuj_tabele_posrednie(sciezka_docelowa, rok_ukonczenia = 2024)
 }
 \arguments{
-\item{parametry}{lista zawierająca ścieżki do plików/katalogów}
+\item{sciezka_docelowa}{ścieżka w formacie tekstowym, w ktorej mają być
+zapisane surowe tabele pośrednie}
 
 \item{rok_ukonczenia}{rok, którym absolwent ukończył szkołę (jest to tym
 samym rok monitoringu)}

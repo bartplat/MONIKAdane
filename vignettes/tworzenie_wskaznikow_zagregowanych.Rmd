@@ -1,0 +1,278 @@
+---
+title: "Tworzenie wskaźników zagregowanych"
+subtitle: "Zrównoleglanie obliczeń"
+author: "Bartłomiej Płatkowski"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tworzenie_wskaznikow_zagregowanych}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(MONIKAdane)
+```
+
+**UWAGA:** W tym dokumencie opisano specyficzny proces liczenia wskaźników zagregowanych, czyli poprzez "ręczne" zrównoleglanie obliczeń. Nie korzystając z tego sposobu można policzyć wskaźniki pisząc mniej kodu, jednak jest to dużo dłuższy (ale też prostszy) proces, który nie będzie tutaj opisywany.
+
+# Określenie parametrów
+
+W tym dokumencie będziemy pracować na różnych lokalizacjach docelowych. Poniżej pokazano przykładową konstrukcję obiektu przechowującego lokalizacje oddające logikę przechowywania zbiorów danych. Wiele funkcji w pakiecie wymaga podawania ścieżek do plików czy folderów, ale ze względu na prywatność i kompatybilność tego dokumentu nie są one tutaj podane w rzeczywistej formie, ale jako symbol zastępczy (*ang. placeholder*). Użytkownik może sam odtworzyć sobie obiekt `parametry` wklejając tam swoje ścieżki, dzięki czemu prezentowane funkcje będą działać na jego komputerze.
+
+```{r params, eval=FALSE}
+parametry <- list(
+  plik_tabele_posrednie = list(
+    p2_p4 = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie_p2-p4.RData" # ścieżka do pliku z przygotowanymi wcześniej tabelami pośrednimi
+  ), 
+  produkty = list(
+    szk_god = "C:/Users/uzytkownik1/sciezka/wskazniki/szk_god/",
+    szk_god_partial = "C:/Users/uzytkownik1/sciezka/wskazniki/szk_god/partial/",
+    szkozaw = "C:/Users/uzytkownik1/sciezka/wskazniki/szkozaw/",
+    szkozaw_partial = "C:/Users/uzytkownik1/sciezka/wskazniki/szkozaw/partial/",
+    god1_god2 = "C:/Users/uzytkownik1/sciezka/wskazniki/god1_god2/",
+    woj = "C:/Users/uzytkownik1/sciezka/wskazniki/woj/"
+  ),
+  sciezka_zapis_dane = list(
+    tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/"
+  )
+)
+```
+
+```{r stealh_params, eval=FALSE, echo=FALSE}
+parametry <- parametry()
+```
+
+# Obliczanie wskaźników zagregowanych
+
+Mając gotowe tabele pośrednie (proces opisany w [dokumencie opisującym tworzenie tabel pośrednich](tworzenie_tabel_posrednich.html)) mogę przystępować do wieloetapowego liczenia wskaźników zagregowanych, który zostanie opisany w niniejszym dokumencie. Na potrzeby generowania raportów tworzę 4 grupy wskaźników:
+
+1. `szk` i `god` - wskaźniki zagregowane na poziomie szkoły (id RSPO) oraz odpowiadająca im grupa odniesienia (z wykluczeniem danej szkoły)
+2. `szkozaw` - wskaźniki zagregowane na poziomie szkoło-zawodów. Używam ich tylko w raportach dla szkół zawodowych. Jest to tylko wskaźnik S3 (status edukacyjno-zawodowy), ale dla każdego zawodu, w którym było minimum 10 absolwentów.
+3. `god1` i `god2` - wskaźniki do aneksu
+4. `woj` - wskaźniki do aneksu na poziomie wojewódzkim
+
+Wskaźniki `szk` i `god` oraz `szkozaw` mają złożony proces liczenia, który wymaga przeplatania uruchamiania kodu w `R` na przemian z wykonywaniem skryptów w `bash` (wszystko jest szczegółowo opisane w dalszej części dokumentu). Pozostałe wskaźniki można policzyć wyłącznie za pomocą `R` np. w `RStudio`.
+
+Pracę zaczynamy od wczytania uprzednio przygotowanych tabel pośrednich `p2`, `p3` i `p4`:
+
+```{r data, eval=FALSE}
+load(parametry$plik_tabele_posrednie$p2_p4, verbose = TRUE)
+```
+
+## Wskaźniki `szk` i `god`
+
+Jest to zbiór wskaźników zawierający dwa zbiory, które stanowią główną treść raportów szkolnych:
+
+- `szk`- tutaj każdy wiersz to jedna szkoła (a finalnie jeden raport szkolny)
+- `god` - tutaj każdy wiersz to jedna grupa odniesienia dla danej szkoły
+
+### Grupa odniesienia
+
+Pracę nad tymi wskaźnikami zaczynamy od stworzenia definicji podziału na grupy i grupy odniesienia (obiekt `grupy`). Grupą jest szkoła (zmienna `id_szk`, czyli numer RSPO), a grupą odniesienia są pozostałe szkoły danego typu (czyli z wykluczeniem szkoły, której dotyczy wiersz) z powiatu, podregionu, województwa lub kraju - w zależności od tego czy został spełniony warunek minimum 10 absolwentów z minimum 3 szkół w danym obszarze do porównania. Ta logika zamknięta jeat w funkcji `utworz_grupowanie_odn_teryt()`. Tak przygotowaną ramkę danych warto zapisać na przyszłość.
+
+```{r, eval=FALSE}
+grupy_szk = utworz_grupowanie_odn_teryt(
+  x = p4,
+  zmGrupujace = c(id_szk, rok_abs, typ_szk),
+  zmPominGrupaOdniesienia = c(id_szk),
+  idAbs = id_abs)
+
+save(grupy_szk,
+     file = paste0(parametry$produkty$szk_god, "grupy_szk_god.RData"))
+```
+
+### Przygotowanie infrastruktury do zrównoleglania obliczeń
+
+Ze względu na objętość obliczeń, których uruchamianie w jednej sesji `R` zajęłoby wiele godzin, proces jest podzielony na części. Można powiedzieć, że obliczenia te są zrónoleglone ręcznie, gdyż każda część obliczeń uruchamiana jest w oddzielnej sesji `R` za pomocą skryptu `bash`. W tym podrozdziale opisano przygotowanie infrastruktury służącej do obliczeń zrównoleglonych, która składa się z następujących części:
+
+1. Utworzenie podziału na (niemal) równoliczne grupy
+2. Tworzenie skryptu liczącego wskaźniki dla każdej z wyodrębnionych grup
+3. Tworzenie pliku `.txt` zbierającego ścieżki do skryptów liczących wskaźniki
+4. Tworzenie skryptu `.bat` uruchamiającego skrypty liczące wskaźniki
+
+Zaczynamy od stworzenia podziału za pomocą funkcji `skrypty_podzial()`. Tutaj, obliczenia będą podzielone na 11 części, ale jest to parametr, który można zmieniać w zależności od ilośći pamięci RAM komputera użytkownika. W poniższym przykładzie użyto zwyczajowych 11 podziałów.
+
+```{r, eval=FALSE}
+podzial_df = skrypty_podzial(nrow(grupy_szk), 11)
+podzial_df
+```
+
+Tworzenie skryptów `skrypt_N#.R`
+
+```{r, eval=FALSE}
+skrypt_wzor(parametry$produkty$szk_god,
+            parametry$sciezka_zapis_dane$tabele_posrednie,
+            2023,
+            "szk_god",
+            podzial_df)
+```
+
+Tworzenie pliku `source` dla skryptu `.bat` generującego wskaźniki/raporty
+
+```{r, eval=FALSE}
+plik_source(parametry$produkty$szk_god, "szk_god")
+```
+
+I na koniec tworzymy skrypt `.bat`, który uruchomi tych 11 skryptów stworzonych za pomocą funkcji `skrypt_wzor()`, do których ścieżki stworzyliśmy za pomocą `plik_source()`. Wszystkie te produkty działania funkcji powinny znajdować się w jednym folderze.
+
+```{r, eval=FALSE}
+skrypt_bat(parametry$produkty$szk_god, "szk_god")
+```
+
+Mając przygotowaną całą tę infrastrukturę możemy przejść do generowania wskaźników. W tym celu należy uruchomić skrypt `generuj_szk_god.bat`, który przed chwilą stworzyliśmy. Jeżeli z jakiegoś powodu ten skrypt nie działa, można każdą ścieżkę z pliku `source_szk_god.txt` (stworzonego za pomocą `plik_source()`) wkleić do **oddzielnej** sesji R i uruchomić za pomocą funkcji `source()` np. `source("C:/Users/uzytkownik1/sciezka/wskazniki/szk_god/skrypt_N1.R")`.
+
+Każdy wywoływany skrypt, jeśli nie zwróci błędów, kończy się sygnałem dźwiękowym. Rezultatem działania skryptów jest, w tym przypadku 11, częściowych zbiorów danych. Należy je teraz połączyć w jeden finalny zbiór. Dodatkowo, funkcja `zlacz_partial()` dodaje do wskaźników `szk_god` dodatkową zmienną z odmianami.
+
+```{r, eval=FALSE}
+zlacz_partial(parametry$produkty$szk_god_partial,
+              parametry$sciezka_zapis_dane$wskazniki_zagregowane,
+              "szk_god")
+```
+
+## Wskaźniki `szkozaw`
+
+Proces liczenia wskaźników `szkozaw` jest bardzo podobny do liczenia `szk` i `god`.
+
+### Grupa odniesienia
+
+Pracę nad tymi wskaźnikami zaczynamy od stworzenia definicji podziału na grupy, tym razem bez grupy odniesienia. Zbiór `szkozaw` to zbiór szkoło-zawodów, w którym dla każdej obserwacji liczone są rozkłady statusów edukacyjno-zawodowych. Przed obliczaniem definicji podziału na grupy zawężamy zbiory do szkół kształcących w zawodzie (tylko dla nich będą obliczane wskaźniki na tym etapie).
+
+```{r, eval=FALSE}
+p3_szkozaw <- p3 %>% 
+  filter(!typ_szk %in% c("Szkoła specjalna przysposabiająca do pracy",
+                         "Liceum ogólnokształcące",
+                         "Liceum dla dorosłych"))
+
+p4_szkozaw <- p4 %>% 
+  filter(id_abs %in% unique(p3$id_abs))
+
+grupy_szkozaw = utworz_grupowanie_odn_teryt(
+  x = p3_szkozaw,
+  zmGrupujace = c(id_szk, nazwa_zaw, typ_szk))
+
+save(grupy_szkozaw,
+     file = paste0(parametry$produkty$szkozaw, "grupy_szkozaw.RData"))
+```
+
+### Przygotowanie infrastruktury do zrównoleglania obliczeń
+
+Ze względu na objętość obliczeń, których uruchamianie w jednej sesji `R` zajęłoby wiele godzin, proces jest podzielony na części. Można powiedzieć, że obliczenia te są zrónoleglone ręcznie, gdyż każda część obliczeń uruchamiana jest w oddzielnej sesji `R` za pomocą skryptu `bash`. W tym podrozdziale opisano przygotowanie infrastruktury służącej do obliczeń zrównoleglonych, która składa się z następujących części:
+
+1. Utworzenie podziału na (niemal) równoliczne grupy
+2. Tworzenie skryptu liczącego wskaźniki dla każdej z wyodrębnionych grup
+3. Tworzenie pliku `.txt` zbierającego ścieżki do skryptów liczących wskaźniki
+4. Tworzenie skryptu `.bat` uruchamiającego skrypty liczące wskaźniki
+
+Zaczynamy od stworzenia podziału za pomocą funkcji `skrypty_podzial()`. Tutaj, obliczenia będą podzielone na 11 części, ale jest to parametr, który można zmieniać w zależności od ilośći pamięci RAM komputera użytkownika. W poniższym przykładzie użyto zwyczajowych 11 podziałów.
+
+```{r, eval=FALSE}
+podzial_df = skrypty_podzial(nrow(grupy_szkozaw), 11)
+podzial_df
+```
+
+Tworzenie skryptów `skrypt_N#.R`
+
+```{r, eval=FALSE}
+skrypt_wzor(parametry$produkty$szkozaw,
+            parametry$sciezka_zapis_dane$tabele_posrednie,
+            2023,
+            "szkozaw",
+            podzial_df)
+```
+
+Tworzenie pliku `source` dla skryptu `.bat` generującego wskaźniki/raporty
+
+```{r, eval=FALSE}
+plik_source(parametry$produkty$szkozaw, "szkozaw")
+```
+
+I na koniec tworzymy skrypt `.bat`, który uruchomi tych 11 skryptów stworzonych za pomocą funkcji `skrypt_wzor()`, do których ścieżki stworzyliśmy za pomocą `plik_source()`. Wszystkie te produkty działania funkcji powinny znajdować się w jednym folderze.
+
+```{r, eval=FALSE}
+skrypt_bat(parametry$produkty$szkozaw, "szkozaw")
+```
+
+Mając przygotowaną całą infrastrukturę możemy przejść do generowania wskaźników. W tym celu należy uruchomić skrypt `generuj_szkozaw.bat`, który przed chwilą stworzyliśmy. Jeżeli z jakiegoś powodu ten skrypt nie działa, można każdą ścieżkę z pliku `source_szkozaw.txt` (stworzonego za pomocą `plik_source()`) wkleić do **oddzielnej** sesji R i uruchomić za pomocą funkcji `source()` np. `source("C:/Users/uzytkownik1/sciezka/wskazniki/szkozaw/skrypt_N1.R")`.
+
+Każdy wywoływany skrypt, jeśli nie zwróci błędów, kończy się sygnałem dźwiękowym. Rezultatem działania skryptów jest, w tym przypadku 11, częściowych zbiorów danych. Należy je teraz połączyć w jeden finalny zbiór.
+
+```{r, eval=FALSE}
+zlacz_partial(parametry$produkty$szkozaw_partial,
+              parametry$sciezka_zapis_dane$wskazniki_zagregowane,
+              "szkozaw")
+```
+
+## Wskaźniki `god1` i `god2`
+
+Kolejne dwa zestawy wskaźników liczone są w analogiczny, ale inny sposób niż powyższe opisane w poprzednich dwóch podrozdziałach. Zestaw wskaźników `god1` i `god2` to zbiory, które slużą do prezentacji danych w aneksach do raportów szkolnych. Zbiór `god1` zawiera wskaźniki dla absolwentów danego zawodu dla danego typu szkoły, a jego grupą odniesienia (wskaźniki `god2`) jest typ szkoły w całym kraju. Pierwszy zbiór, ze względu na występowanie zmiennej mówiącej o zawodzie wyuczonym jest używany tylko w raportach dla szkół kształcących w zawodzie.
+
+Na początek, jeszcze przed definiowaniem grup podziału, żeby skrypt nie zwracał błędów należy zrekodować braki danych w zawodzie wyuczonym, w szkołach niekształcących w zawodzie (np. LO), na wartości "BRAK ZAWODU". Dodatkowo, ze względu na prostą konstrukcję tych wskaźników, definicja grup podziału liczona jest "ręcznie".
+
+```{r, eval=FALSE}
+p4_god12 <- p4
+p3_god12 <- p3
+
+p4_god12$nazwa_zaw[is.na(p4_god12$nazwa_zaw)] <- "BRAK ZAWODU"
+p3_god12$nazwa_zaw[is.na(p3_god12$nazwa_zaw)] <- "BRAK ZAWODU"
+
+grupy_god12 <- p4_god12 %>% 
+  select(typ_szk, nazwa_zaw) %>%
+  mutate(grupa = paste0("(typ_szk %in% \"", typ_szk, "\") & ",
+                        "(nazwa_zaw %in% \"", nazwa_zaw, "\")"),
+         odniesienie = paste0("typ_szk %in% \"", typ_szk, "\"")) %>% 
+  distinct()
+
+# save(grupy_god12,
+#      file = paste0(parametry$produkty$god1_god2, "grupy_god12.RData"))
+```
+
+Następnie, liczymy i zapisujemy wskaźniki uruchamiając poniższy kod:
+
+```{r, eval=FALSE}
+wsk <- agreguj_aneks_1rokpo_adm4(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy_god12, rok = 2023)
+god1 <- wsk$grupy %>% 
+  filter(!nazwa_zaw %in% "BRAK ZAWODU")
+god2 <- wsk$grupyOdniesienia %>% 
+  select(-c(nazwa_zaw, grupa, l_abs, l_kobiet)) %>% 
+  distinct()
+
+save(god1, god2,
+     file = paste0(parametry$sciezka_zapis_dane$wskazniki_zagregowane, "wskazniki_god1_god2.RData"))
+```
+
+## Wskaźniki `woj`
+
+Ostatnim zbiorem, który należy przygotować na potrzeby aneksu do raportu szkolnego jest zbiór `woj` będący zbiorem wskaźników zagregowanych na poziomie typu szkoły w danym województwie. Wskaźniki te będą liczone analogicznie jak te w poprzednim podrozdziale, czyli w dużej mierze "ręcznie".
+
+Zaczniemy od zdefiniowania grup odniesienia.
+
+```{r, eval=FALSE}
+grupy <- p4 %>%
+  select(typ_szk, teryt_woj) %>%
+  mutate(grupa = paste0("teryt_woj %in% ", teryt_woj),
+         odniesienie = paste0("(teryt_woj %in% ", teryt_woj, ") & ",
+                              "(typ_szk %in% \"", typ_szk, "\")")) %>% 
+  arrange(typ_szk) %>% 
+  distinct()
+```
+
+Aby następnie przejść do obliczeń.
+
+```{r, eval=FALSE}
+wsk <- agreguj_aneks_1rokpo_adm4(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy, rok_abso = 2023)
+woj <- wsk$grupyOdniesienia
+
+woj <- dodaj_odmiany(woj, "woj")
+
+save(woj, file = paste0(parametry$sciezka_zapis_dane$wskazniki_zagregowane, "wskazniki_woj.RData"))
+```
+
+Na tym kończy się proces obliczania wskaźników na potrzeby automatycznych raportów szkolnych, których generowanie wspomaga pakiet [MONIKAraporty](https://github.com/bartplat/MONIKAraporty).

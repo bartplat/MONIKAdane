@@ -4,10 +4,14 @@
 \alias{rozdziel_tabele}
 \title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
-rozdziel_tabele(parametry, rok_ukonczenia = 2024)
+rozdziel_tabele(sciezka_tab_posrednie, sciezka_docelowa, rok_ukonczenia = 2024)
 }
 \arguments{
-\item{parametry}{lista zawierająca ścieżki do plików/katalogów}
+\item{sciezka_tab_posrednie}{ścieżka w formacie tekstowym, w ktorej znajdują
+się tabele pośrednie}
+
+\item{sciezka_docelowa}{ścieżka w formacie tekstowym, w ktorej mają być
+zapisane surowe tabele pośrednie}
 
 \item{rok_ukonczenia}{rok, którym absolwent ukończył szkołę (jest to tym
 samym rok monitoringu)}

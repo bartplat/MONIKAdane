@@ -3,32 +3,35 @@
 #' Funkcja rozłącza obiekt z tabelami pośrednimi przygotowanymi przez Tomka na
 #' oddzielne obiekty oraz dokonuje drobnych testów przed rozpoczęciem
 #' przygotowywania tabel do dalszych etapów pracy.
-#' @param parametry lista zawierająca ścieżki do plików/katalogów
+#' @param sciezka_tab_posrednie ścieżka w formacie tekstowym, w ktorej znajdują
+#' się tabele pośrednie
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
+#' zapisane surowe tabele pośrednie
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
 #' @importFrom dplyr %>% left_join select all_of join_by
 #' @return obiekt `.RData` z tabelami pośrednimi
 #' @export
-rozdziel_tabele <- function(parametry,
+rozdziel_tabele <- function(sciezka_tab_posrednie, sciezka_docelowa,
                             rok_ukonczenia = 2024) {
-  stopifnot(is.list(parametry),
-            is.character(parametry$plik_tabele_posrednie),
-            grepl(".RData$", parametry$plik_tabele_posrednie) | grepl("rds$", parametry$plik_tabele_posrednie))
+  stopifnot(is.character(sciezka_tab_posrednie),
+            is.character(sciezka_docelowa),
+            grepl(".RData$", sciezka_tab_posrednie) | grepl("rds$", sciezka_tab_posrednie))
   
   czas_start <- Sys.time()
   cat("\nRozpoczęto wczytywanie tabel pośrednich: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), sep = "")
-  obiekt_tabele <- load(parametry$plik_tabele_posrednie)
+  obiekt_tabele <- load(sciezka_tab_posrednie)
   
-  if (length(obiekt_tabele) != 1) stop(paste0("Bład: Obiekt zawierający tabele pośrednie zawiera więcej niż jeden obiekt. Są to obiekty:\n"),
-                                      paste(names(obiekt_tabele), collapse = "\n"))
+  # if (length(obiekt_tabele) != 1) stop(paste0("Bład: Obiekt zawierający tabele pośrednie zawiera więcej niż jeden obiekt. Są to obiekty:\n"),
+  #                                     paste(ls(), collapse = "\n"))
   
   assign("tabele", get(obiekt_tabele))
   
-  if (!"p1" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", tabele_sciezka, "\" brakuje tabel pośrednich p1"))
-  if (!"p2" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", tabele_sciezka, "\" brakuje tabel pośrednich p2"))
-  if (!"p3" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", tabele_sciezka, "\" brakuje tabel pośrednich p3"))
-  if (!"p4" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", tabele_sciezka, "\" brakuje tabel pośrednich p4"))
-  if (!"p5" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", tabele_sciezka, "\" brakuje tabel pośrednich p5"))
+  if (!"p1" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p1"))
+  if (!"p2" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p2"))
+  if (!"p3" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p3"))
+  if (!"p4" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p4"))
+  if (!"p5" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p5"))
   
   cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zakończono wczytywanie tabel pośrednich - wszystkie tabele od p1 do p5 były obecne w obiekcie.",
       sep = "")
@@ -59,7 +62,7 @@ rozdziel_tabele <- function(parametry,
   
   # dołączanie 
   cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
-  zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "teryt_woj_szk", "teryt_pow_szk")
+  zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "teryt_woj", "teryt_pow")
   if (length(setdiff(zmienneGrupujace, names(p3))) > 0) {
     cat("\nW tabeli `p3` brakuje następujących kolumn: ", paste(setdiff(zmienneGrupujace, names(p3)), collapse = ", "), ". Zostaną one teraz dołączone z tabeli `p4`.", sep = "")
     p3 <- p3 %>% 
@@ -85,10 +88,10 @@ rozdziel_tabele <- function(parametry,
   # }
   cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
   for (i in tabele) {
-    save(list = i, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie, i, "_raw.RData"))
+    save(list = i, file = paste0(sciezka_docelowa, i, "_raw.RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Tabela pośrednia *", i, "* została zapisana.", sep = "")
   }
-  save(p1, p2, p3, p4, p5, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie, "tabele_posrednie_raw.RData"))
+  save(p1, p2, p3, p4, p5, file = paste0(sciezka_docelowa, "tabele_posrednie_raw.RData"))
   cat("\nWszystkie tabele pośrednie zostały zapisane do obiektu `tabele_posrednie_raw.RData`.")
   czas_stop = Sys.time()
   czas_roznica = round(czas_stop - czas_start, 2)
@@ -100,7 +103,8 @@ rozdziel_tabele <- function(parametry,
 #' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
 #' dalszej części procesu przechodzenia od tabel pośrednich do generowania
 #' automatycznych raportów. 
-#' @param parametry lista zawierająca ścieżki do plików/katalogów
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
+#' zapisane surowe tabele pośrednie
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
 #' @importFrom dplyr %>% filter group_by count filter pull select distinct
@@ -108,7 +112,7 @@ rozdziel_tabele <- function(parametry,
 #' @return multiple `.RData` objects
 #' @seealso [rozdziel_tabele()]
 #' @export
-przygotuj_tabele_posrednie <- function(parametry,
+przygotuj_tabele_posrednie <- function(sciezka_docelowa,
                                        rok_ukonczenia = 2024) {
   tryCatch({
     log_file = paste0("przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
@@ -116,20 +120,19 @@ przygotuj_tabele_posrednie <- function(parametry,
     czas_start = Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     
-    stopifnot(is.list(parametry),
-              is.numeric(rok_ukonczenia),
-              rok_ukonczenia > 2021)
+    stopifnot(is.character(sciezka_docelowa),
+              is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021)
     
     nazwy_tabel = c("p1_raw.RData", "p2_raw.RData", "p3_raw.RData", "p4_raw.RData", "p5_raw.RData")
     
-    if (all(nazwy_tabel %in% list.files(parametry$sciezka_zapis_dane$tabele_posrednie))) {
+    if (all(nazwy_tabel %in% list.files(sciezka_docelowa))) {
       for (i in nazwy_tabel) {
-        load(paste0(parametry$sciezka_zapis_dane$tabele_posrednie, i))
+        load(paste0(sciezka_docelowa, i))
         cat("\n", format(Sys.time(), "%H:%M:%S"), " - tabela pośrednia *", i, "* została pomyślnie wczytana.", sep = "")
       }
     } else {
       stop(paste0("\nBłąd: Brak tabel pośrednich z sufiksem \"_raw\".\nFunkcja oczekuje w folderze: \"",
-                  parametry$sciezka_zapis_dane$tabele_posrednie,
+                  sciezka_docelowa,
                   "\" tabel o następujących nazwach:\n",
                   paste(nazwy_tabel, collapse = "\n"), "\nTabele o takich nazwach zwracane są np. przez funkcję `rozdziel_tabele()`."))
     }
@@ -210,11 +213,11 @@ przygotuj_tabele_posrednie <- function(parametry,
     }
     
     # konwersja terytu na format 4-cyfrowy
-    teryty_p3 <- as.character(p3$teryt_pow_szk)[1:1000]
+    teryty_p3 <- as.character(p3$teryt_pow)[1:1000]
     if (any(nchar(teryty_p3) %in% c(5, 6))) {
       cat("\n", format(Sys.time(), "%H:%M:%S"), " - Konwersja terytu powiatu na format 4-cyfrowy.", sep = "")
       p3 <- p3 %>% 
-        mutate(teryt_pow_szk = floor(teryt_pow_szk / 100))
+        mutate(teryt_pow = floor(teryt_pow / 100))
     } else if (any(nchar(teryty_p3) %in% c(3, 4))) {
       cat("\n", format(Sys.time(), "%H:%M:%S"), " - Terytu powiatu ma prawidłowy format 4-cyfrowy.", sep = "")
     } else {
@@ -234,7 +237,7 @@ przygotuj_tabele_posrednie <- function(parametry,
     
     # dodawanie zmiennych grupujących do `p3` i `p2`
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
-    zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "teryt_pow_szk", "nazwa_zaw", "branza", "plec")
+    zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj", "teryt_pow", "nazwa_zaw", "branza", "plec")
     p3 <- p3 %>% 
       left_join(p4 %>% select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
                 join_by(id_abs, rok_abs))
@@ -246,13 +249,13 @@ przygotuj_tabele_posrednie <- function(parametry,
     
     # zapis
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
-    save(p1, p2, p3, p4, p5, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+    save(p1, p2, p3, p4, p5, file = paste0(sciezka_docelowa,
                                            "tabele_posrednie_wrz2024_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano PEŁNE tabele p1:p5.", sep = "")
-    save(p3, p4, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+    save(p3, p4, file = paste0(sciezka_docelowa,
                                "tabele_posrednie_wrz2024_p3p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p3:p4.", sep = "")
-    save(p2, p3, p4, file = paste0(parametry$sciezka_zapis_dane$tabele_posrednie,
+    save(p2, p3, p4, file = paste0(sciezka_docelowa,
                                    "tabele_posrednie_wrz2024_p2-p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p2:p4.", sep = "")
     

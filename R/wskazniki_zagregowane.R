@@ -150,7 +150,7 @@ skrypty_podzial <- function(nrow, podzial = 11) {
 #'   posiadający absolwentów) w danej szkol - szkoło-zawod.}
 #'   \item{`"woj"`}{}
 #' }
-#' @param grupy_df ramka danych wygenerowana zwykle za pomocą funkcji
+#' @param podzial_grupy_df ramka danych wygenerowana zwykle za pomocą funkcji
 #' [definicje_podzialu()]
 #' @importFrom tibble is_tibble
 #' @return pliki txt będące skryptami uruchamianymi podczas zrównoleglania
@@ -159,7 +159,7 @@ skrypty_podzial <- function(nrow, podzial = 11) {
 #' @export
 skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
                         rok_ukonczenia = 2024, rodzaj_wsk,
-                        grupy_df) {
+                        podzial_grupy_df) {
   rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
   
   stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
@@ -167,11 +167,8 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
             rodzaj_wsk %in% rodzaje,
             "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
             is.numeric(rok_ukonczenia),
-            is_tibble(grupy_df) | is.data.frame(grupy_df),
-            nrow(grupy_df) > 1)
-  
-  podzial_df <- skrypty_podzial(nrow(grupy_df), 11)
-  params <- parametry(rok_ukonczenia)
+            is_tibble(podzial_grupy_df) | is.data.frame(podzial_grupy_df),
+            nrow(podzial_grupy_df) > 1)
   
   if (rodzaj_wsk == "szk_god") {
     stale <- paste(
@@ -181,24 +178,24 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
       "library(beepr)",
       "# ładownaie danych",
       paste0("load(\"", sciezka_tab_posrednie, "\")"),
-      paste0("load(\"", sciezka_definicje, "\")"),
+      paste0("load(\"", sciezka_docelowa, "\")"),
       "grupy1 = grupy[maska,]",
       "# liczenie wskaźników",
-      "wsk = agreguj_1rokpo_adm(wsk2 = p2, wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = 2024)",
+      paste0("wsk = agreguj_1rokpo_adm(wsk2 = p2, wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
       "szk = wsk$grupy",
       "god = wsk$grupyOdniesienia",
       sep = "\n"
     )
     
-    for (i in 1:nrow(podzial_df)) {
-      nazwa_pliku = paste0(sciezka_docelowa, "skrypt_N", podzial_df$skrypt[i], ".R")
+    for (i in 1:nrow(podzial_grupy_df)) {
+      nazwa_pliku = paste0(sciezka_docelowa, "skrypt_N", podzial_grupy_df$skrypt[i], ".R")
       cat(
         "# parametry\nmaska = ",
-        podzial_df$od[i],
+        podzial_grupy_df$od[i],
         ":",
-        podzial_df$do[i],
+        podzial_grupy_df$do[i],
         "\nprefiks = \"N",
-        podzial_df$skrypt[i],
+        podzial_grupy_df$skrypt[i],
         "\"\n",
         stale,
         "\n",
@@ -210,12 +207,45 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
         file = nazwa_pliku
       )
     }
-  } else if (rodzaj_wsk == "god1_god2") {
-    
   } else if (rodzaj_wsk == "szkozaw") {
+    stale <- paste(
+      "# biblioteki",
+      "library(dplyr)",
+      "library(MONIKAdane)",
+      "library(beepr)",
+      "# ładownaie danych",
+      paste0("load(\"", sciezka_tab_posrednie, "\")"),
+      paste0("load(\"", sciezka_docelowa, "\")"),
+      "grupy1 = grupy[maska,]",
+      "# liczenie wskaźników",
+      paste0("wsk = agreguj_szkozaw_1rokpo_adm4(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
+      "szk = wsk$grupy",
+      "god = wsk$grupyOdniesienia",
+      sep = "\n"
+    )
     
-  } else if (rodzaj_wsk == "woj") {
-    
+    for (i in 1:nrow(podzial_grupy_df)) {
+      nazwa_pliku = paste0(sciezka_docelowa, "skrypt_N", podzial_grupy_df$skrypt[i], ".R")
+      cat(
+        "# parametry\nmaska = ",
+        podzial_grupy_df$od[i],
+        ":",
+        podzial_grupy_df$do[i],
+        "\nprefiks = \"N",
+        podzial_grupy_df$skrypt[i],
+        "\"\n",
+        stale,
+        "\n",
+        "# zapisywanie wskaźników\n",
+        paste0("plik = paste0(\"", sciezka_docelowa, "partial/wsk_szkozaw_\", prefiks, \".RData\")\n"),
+        "save(szk, god, file = plik)\n",
+        "beep(5)",
+        sep = "",
+        file = nazwa_pliku
+      )
+    }
+  } else if (rodzaj_wsk %in% c("god1_god2", "woj")) {
+    message(paste0("Wskaźniki *", rodzaj_wsk, "* nie są zwykle obliczane równolegle, więc nie przewidziadno dla nich tworzenia infrastruktury dla zrównoleglania. Należy je policzyć \"ręcznie\"."))
   }
 }
 #' @title Funkcja generująca plik ze ścieżkami do skryptów
@@ -247,7 +277,7 @@ plik_source <- function(sciezka_docelowa, rodzaj_wsk) {
     stop(paste0("W podanej lokalizacji (", sciezka_docelowa, ") nie znaleziono plików ze skryptami, których nazwy zaczynają się od \"skrypt_N\""))
   }
   
-  if (rodzaj_wsk == c("szk_god", "szkozaw")) {
+  if (rodzaj_wsk %in% c("szk_god", "szkozaw")) {
     plik <- paste(gsub("/", "\\\\",
                  paste0(sciezka_docelowa,
                         list.files(sciezka_docelowa)[grep("^skrypt_N", list.files(sciezka_docelowa))])),
@@ -304,13 +334,8 @@ skrypt_bat <- function(sciezka_docelowa, rodzaj_wsk) {
 #' Funkcja służy do scalenia częściowych zbiorów, które powstają podczas pracy
 #' skryptów `.bat` (zwracanych przez funkcję [skrypt_bat()]). Zbiory są łączone,
 #' a czasem dodawane są dodatkowe zmienne. 
-#' 
-#' 
-#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
-#' zapisany plik source - jest to równocześnie ścieżka, w której powinny
-#' znajdować się skrypty według podziału, który ma być zastosowany w
-#' zrównoleglaniu
-#' 
+#' @param sciezka_partial ścieżka w formacie tekstowym, w ktorej znajdują się
+#' częściowe zbiory danych
 #' @param sciezka_zapisu ścieżka do folderu w formacie tekstowym, w którym ma
 #' być zapisany połączony zbiór
 #' @param rodzaj_wsk wektor tekstowy określający dla jakiego rodzaju wskaźników
@@ -319,22 +344,22 @@ skrypt_bat <- function(sciezka_docelowa, rodzaj_wsk) {
 #' (jeżeli wartość jest spoza zbioru sensownych wartości).
 #' @return zapis wskaźników zagregowanych
 #' @export
-zlacz_partial <- function(sciezka_docelowa, sciezka_zapisu, rodzaj_wsk) {
+zlacz_partial <- function(sciezka_partial, sciezka_zapisu, rodzaj_wsk) {
   rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
-  stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
+  stopifnot(is.character(sciezka_partial) & length(sciezka_partial) > 0,
             is.character(sciezka_zapisu) & length(sciezka_zapisu) > 0,
             rodzaj_wsk %in% rodzaje,
             "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
-            dir.exists(sciezka_docelowa))
+            dir.exists(sciezka_partial))
   
-  sciezka_docelowa <- paste0(sciezka_docelowa, "partial/")
+  sciezka_partial <- paste0(sciezka_partial, "partial/")
   
-  if (!any(grepl("^wsk_.*\\.RData$", list.files(sciezka_docelowa)))) {
-    stop(paste0("W podanej lokalizacji (", sciezka_docelowa, ") nie znaleziono zbiorów częściowych.\nSprawdź czy na pewno dla tego rodzaju wskaźników są one generowane."))
+  if (!any(grepl("^wsk_.*\\.RData$", list.files(sciezka_partial)))) {
+    stop(paste0("W podanej lokalizacji (", sciezka_partial, ") nie znaleziono zbiorów częściowych.\nSprawdź czy na pewno dla tego rodzaju wskaźników są one generowane."))
   }
   
   if (rodzaj_wsk == "szk_god") {
-    zbiory <- list.files(path = sciezka_docelowa, pattern = "\\.RData$", full.names = TRUE)
+    zbiory <- list.files(path = sciezka_partial, pattern = "\\.RData$", full.names = TRUE)
     szk_lista <- list()
     god_lista <- list()
     
@@ -349,14 +374,14 @@ zlacz_partial <- function(sciezka_docelowa, sciezka_zapisu, rodzaj_wsk) {
     szk <- do.call(rbind, szk_lista)
     god <- do.call(rbind, god_lista)
     
-    szk <- dodaj_odmiany_szk(szk)
+    szk <- dodaj_odmiany(szk, "szk_god")
     
     sciezka_zapisu <- ifelse(grepl("/^", sciezka_zapisu),
                              paste0(sciezka_zapisu, "wskazniki_szk_god.RData"),
                              paste0(sciezka_zapisu, "/wskazniki_szk_god.RData"))
     save(szk, god, file = sciezka_zapisu)
   } else if (rodzaj_wsk == "szkozaw") {
-    zbiory <- list.files(path = sciezka_docelowa, pattern = "\\.RData$", full.names = TRUE)
+    zbiory <- list.files(path = sciezka_partial, pattern = "\\.RData$", full.names = TRUE)
     szkozaw_lista <- list()
     
     for (i in 1:length(zbiory)) {
@@ -376,53 +401,102 @@ zlacz_partial <- function(sciezka_docelowa, sciezka_zapisu, rodzaj_wsk) {
     message(paste0("Dla wskaźników *", rodzaj_wsk, "* funkcja nic nie zwraca."))
   }
 }
-#' @title Dodawanie do zbioru `szk` zmiennej zawierającej odmiany rzeczowników
+#' @title Dodawanie do zbioru zmiennej zawierającej odmiany np. rzeczowników
 #' @description
 #' Funkcja używana w ramach funkcji [zlacz_partial()]. Na podstawie zmiennych ze
-#' zbioru wskaźników zagregowanch `szk` określa odmianę rzeczowników, które
-#' następnie używane są w raportach szkolnych.
-#' @param obiekt_szk zbiór wskaźników zagregowanch `szk`
+#' zbioru wskaźników zagregowanch `szk` lub `woj` określa odmianę rzeczowników,
+#' które następnie używane są w raportach szkolnych.
+#' @param wskazniki zbiór wskaźników zagregowanch (`szk` lub `woj`)
+#' @param rodzaj_wsk określa dla jakiego zbioru wyliczyć odmiany
 #' @importFrom dplyr group_by reframe case_when row_number left_join
 #' @importFrom tidyr nest
-#' @return zbiór wskaźników zagregowanch `szk` z dołączoną zmienną `odmiany`
+#' @return zbiór wskaźników zagregowanch z dołączoną zmienną `odmiany`
 #' @export
-dodaj_odmiany_szk <- function(obiekt_szk) {
-  odmiany <- szk %>% 
-    group_by(id_szk) %>%
-    reframe(
-      abs = ifelse(l_abs %in% 1, " absolwenta", " absolwentów"),
-      kob = if (l_kobiet %in% c(0:19)) {
-        case_when(
-          l_kobiet %in% 0 ~ "kobiet",
-          l_kobiet %in% 1 ~ "kobietę",
-          l_kobiet %in% c(2:4) ~ "kobiety",
-          l_kobiet %in% c(5:19) ~ "kobiet")
-      } else {
-        case_when(
-          (l_kobiet %% 10) %in% c(0, 1, 5:9) ~ "kobiet",
-          (l_kobiet %% 10) %in% c(2:4) ~ "kobiety")
-      },
-      abs_opi = ifelse(l_abs_zrodla[[row_number()]]$n_opi %in% 1, " absolwenta", " absolwentów"),
-      abs_zus = ifelse(l_abs_zrodla[[row_number()]]$n_zus %in% 1, " absolwenta", " absolwentów"),
-      osob_zus = if (l_abs_zrodla[[row_number()]]$n_zus %in% c(0:19)) {
-        case_when(
-          l_abs_zrodla[[row_number()]]$n_zus %in% 0 ~ " osób",
-          l_abs_zrodla[[row_number()]]$n_zus %in% 1 ~ " osoba",
-          l_abs_zrodla[[row_number()]]$n_zus %in% c(2:4) ~ " osoby",
-          l_abs_zrodla[[row_number()]]$n_zus %in% c(5:19) ~ " osób")
-      } else {
-        case_when(
-          (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(0, 1, 5:9) ~ " osoby",
-          (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(2:4) ~ " osób")
-      }
+dodaj_odmiany <- function(wskazniki, rodzaj_wsk) {
+  stopifnot(
+    is.data.frame(wskazniki),
+    is.character(rodzaj_wsk),
+    rodzaj_wsk %in% c("szk_god", "woj")
+  )
+  
+  if (rodzaj_wsk == "szk_god") {
+    wymagane_zmienne <- c("id_szk", "l_abs", "l_kobiet",  "l_abs_zrodla")
+    stopifnot(
+      all(wymagane_zmienne %in% names(wskazniki))
     )
-  
-  odmiany <- odmiany %>% 
-    nest(.by = id_szk, .key = "odmiany")
-  
-  
-  obiekt_szk <- obiekt_szk %>% 
-    left_join(odmiany, join_by(id_szk))
-  
-  return(obiekt_szk)
+    
+    odmiany <- wskazniki %>% 
+      group_by(id_szk) %>%
+      reframe(
+        abs = ifelse(l_abs %in% 1, " absolwenta", " absolwentów"),
+        kob = if (l_kobiet %in% c(0:19)) {
+          case_when(
+            l_kobiet %in% 0 ~ "kobiet",
+            l_kobiet %in% 1 ~ "kobietę",
+            l_kobiet %in% c(2:4) ~ "kobiety",
+            l_kobiet %in% c(5:19) ~ "kobiet")
+        } else {
+          case_when(
+            (l_kobiet %% 10) %in% c(0, 1, 5:9) ~ "kobiet",
+            (l_kobiet %% 10) %in% c(2:4) ~ "kobiety")
+        },
+        abs_opi = ifelse(l_abs_zrodla[[row_number()]]$n_opi %in% 1, " absolwenta", " absolwentów"),
+        abs_zus = ifelse(l_abs_zrodla[[row_number()]]$n_zus %in% 1, " absolwenta", " absolwentów"),
+        osob_zus = if (l_abs_zrodla[[row_number()]]$n_zus %in% c(0:19)) {
+          case_when(
+            l_abs_zrodla[[row_number()]]$n_zus %in% 0 ~ " osób",
+            l_abs_zrodla[[row_number()]]$n_zus %in% 1 ~ " osoba",
+            l_abs_zrodla[[row_number()]]$n_zus %in% c(2:4) ~ " osoby",
+            l_abs_zrodla[[row_number()]]$n_zus %in% c(5:19) ~ " osób")
+        } else {
+          case_when(
+            (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(0, 1, 5:9) ~ " osoby",
+            (l_abs_zrodla[[row_number()]]$n_zus %% 10) %in% c(2:4) ~ " osób")
+        }
+      )
+    
+    odmiany <- odmiany %>% 
+      nest(.by = id_szk, .key = "odmiany")
+    
+    wskazniki <- wskazniki %>% 
+      left_join(odmiany, join_by(id_szk))
+    
+    return(wskazniki)
+  } else if (rodzaj_wsk == "woj") {
+    wymagane_zmienne <- "teryt_woj"
+    stopifnot(
+      all(wymagane_zmienne %in% names(wskazniki))
+    )
+    
+    odmiany <- wskazniki %>% 
+      reframe(
+        nazwa = case_when(
+          teryt_woj %in% 2 ~ "dolnośląskie",
+          teryt_woj %in% 4 ~ "kujawsko-pomorskie",
+          teryt_woj %in% 6 ~ "lubelskie",
+          teryt_woj %in% 8 ~ "lubuskie",
+          teryt_woj %in% 10 ~ "łódzkie",
+          teryt_woj %in% 12 ~ "małopolskie",
+          teryt_woj %in% 14 ~ "mazowieckie",
+          teryt_woj %in% 16 ~ "opolskie",
+          teryt_woj %in% 18 ~ "podkarpackie",
+          teryt_woj %in% 20 ~ "podlaskie",
+          teryt_woj %in% 22 ~ "pomorskie",
+          teryt_woj %in% 24 ~ "śląskie",
+          teryt_woj %in% 26 ~ "świętokrzyskie",
+          teryt_woj %in% 28 ~ "warmińsko-mazurskie",
+          teryt_woj %in% 30 ~ "wielkopolskie",
+          teryt_woj %in% 32 ~ "zachodniopomorskie")
+      ) %>% 
+      mutate(
+        nazwa_dop = paste0(nazwa, "go"))
+    
+    odmiany <- odmiany %>% 
+      nest(.by = teryt_woj, .key = "odmiany")
+    
+    wskazniki <- wskazniki %>% 
+      left_join(odmiany, join_by(teryt_woj))
+    
+    return(wskazniki)
+  }
 }

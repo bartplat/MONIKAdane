@@ -9,7 +9,7 @@ skrypt_wzor(
   sciezka_tab_posrednie,
   rok_ukonczenia = 2024,
   rodzaj_wsk,
-  grupy_df
+  podzial_grupy_df
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ posiadający absolwentów) w danej szkol - szkoło-zawod.}
 \item{\code{"woj"}}{}
 }}
 
-\item{grupy_df}{ramka danych wygenerowana zwykle za pomocą funkcji
+\item{podzial_grupy_df}{ramka danych wygenerowana zwykle za pomocą funkcji
 \code{\link[=definicje_podzialu]{definicje_podzialu()}}}
 }
 \value{

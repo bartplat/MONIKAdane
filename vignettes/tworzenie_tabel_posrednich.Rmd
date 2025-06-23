@@ -26,7 +26,7 @@ W tym dokumencie będziemy pracować na różnych lokalizacjach docelowych. Poni
 
 ```{r params, eval=FALSE}
 parametry <- list(
-  plik_tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/tabele_posrednie.RData", # ścieżka do pliku z surowymi tabelami pośrednimi
+  plik_tabele_posrednie_raw = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/tabele_posrednie.RData", # ścieżka do pliku z surowymi tabelami pośrednimi
   sciezka_zapis_dane = list(
     tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie" # ścieżka do folderu, w którym chcemy zapisać przetworzone tabele pośrednie
   )

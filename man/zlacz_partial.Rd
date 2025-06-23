@@ -4,13 +4,11 @@
 \alias{zlacz_partial}
 \title{Łączenie częściowych zbiorów wskaźników zagregowanych}
 \usage{
-zlacz_partial(sciezka_docelowa, sciezka_zapisu, rodzaj_wsk)
+zlacz_partial(sciezka_partial, sciezka_zapisu, rodzaj_wsk)
 }
 \arguments{
-\item{sciezka_docelowa}{ścieżka w formacie tekstowym, w ktorej mają być
-zapisany plik source - jest to równocześnie ścieżka, w której powinny
-znajdować się skrypty według podziału, który ma być zastosowany w
-zrównoleglaniu}
+\item{sciezka_partial}{ścieżka w formacie tekstowym, w ktorej znajdują się
+częściowe zbiory danych}
 
 \item{sciezka_zapisu}{ścieżka do folderu w formacie tekstowym, w którym ma
 być zapisany połączony zbiór}
