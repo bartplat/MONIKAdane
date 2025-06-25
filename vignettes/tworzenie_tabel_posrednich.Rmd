@@ -26,9 +26,9 @@ W tym dokumencie będziemy pracować na różnych lokalizacjach docelowych. Poni
 
 ```{r params, eval=FALSE}
 parametry <- list(
-  plik_tabele_posrednie_raw = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/tabele_posrednie.RData", # ścieżka do pliku z surowymi tabelami pośrednimi
-  sciezka_zapis_dane = list(
-    tabele_posrednie = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie" # ścieżka do folderu, w którym chcemy zapisać przetworzone tabele pośrednie
+  tabele_posrednie = list(
+    plik = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/tabele_posrednie.RData",
+    sciezka = "C:/Users/uzytkownik1/sciezka/zapisu/tabele_posrednie/"
   )
 )
 ```
@@ -47,7 +47,9 @@ Jako *surowe dane* rozumiem tutaj tabele pośrednie, które są zwracane za pomo
 Mając zatem surowy plik z tabelami pośrednimi możemy przystąpić do wstępnej pracy ze zbiorami danych.
 
 ```{r, eval=FALSE}
-rozdziel_tabele(parametry, rok_ukonczenia = 2023)
+rozdziel_tabele(parametry$tabele_posrednie$plik,
+                parametry$tabele_posrednie$sciezka,
+                rok_ukonczenia = 2023)
 ```
 
 Wynikiem działania tej funkcji są oddzielnie zapisane i wstępnie przetworzone zbiory, które zapisane zostały w ścieżce podanej jako pierwszy argument funkcji. Zbiory te zostaną użyte w następnym kroku. Dodatkowo, w trakcie działania funkcji, zwracane są przez nią informacje o tym, co w danycm momencie robi funkcja oraz znaczniku czasowym.
@@ -69,7 +71,8 @@ Funkcja `przygotuj_tabele_posrednie()`:
 - Zapisuje gotowe tabele pośrednie
 
 ```{r, eval=FALSE}
-przygotuj_tabele_posrednie(parametry, rok_ukonczenia = 2023)
+przygotuj_tabele_posrednie(parametry$tabele_posrednie$sciezka,
+                           rok_ukonczenia = 2023)
 ```
 
 Jeśli funkcja `przygotuj_tabele_posrednie()` wykryje braki danych w zmiennej `branza` dla zawodów eksperymentalnych, działanie funkcji zostanie zatrzymane i zostanie zwrócona informacja o tym fakcie oraz tabela w pliku `.csv` z mapowaniem, które należy uzupełnić. Dodatkowo, jeśli zostaną wykryte braki danych w średnich wynagrodzeniach w powiecie, to za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()` zostaną uzupełnione.
@@ -77,13 +80,14 @@ Jeśli funkcja `przygotuj_tabele_posrednie()` wykryje braki danych w zmiennej `b
 W powyższym przykładzie funkcja zwróciła dwa błędy: o braku branż przypisanych do absolwentów oraz o brakach w zmiennej ze średnimi wynagrodzeniami w powiecie. Wraz z błędem o brakach dancyh w zmiennej `branza` tworzony jest plik `"brakujace_branze.csv"` (w tym samym katalogu, w którym znajduje się skrypt uruchamiający funkcję), w którym należy uzupełnić brakujące branże ręcznie - mając uzupełniony plik z mapowaniem zawodów na branże, przy kolejnym wywołaniu `przygotuj_tabele_posrednie()` funkcja uzupełni brakujące branże na podstawie mapowania i przejdzie do dalszych przekształceń. Natomiast brakujące wynagrodzenia w powiecie należy uzupełnić za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()`.
 
 ```{r, eval=FALSE}
-sciezka_p3 <- paste0(parametry$sciezka_zapis_dane$tabele_posrednie, "p3_raw.RData")
+sciezka_p3 <- paste0(parametry$tabele_posrednie$sciezka, "p3_raw.RData")
 uzupelnij_wynagrodzenie_powiat(sciezka_p3, rok_ukonczenia = 2023)
 ```
 
 Po dokonaniu wyszystkich uzupełnień należy ponownie uruchomić funkcję `przygotuj_tabele_posrednie()` i, jeśli przejdzie pomyślnie (bez błędów) cały proces przygotowywania tabel pośrednich, to zostaną one zapisane i ten etap pracy z danymi zostanie ukończony.
 
 ```{r, eval=FALSE}
-przygotuj_tabele_posrednie(parametry, rok_ukonczenia = 2023)
+przygotuj_tabele_posrednie(parametry$tabele_posrednie$sciezka,
+                           rok_ukonczenia = 2023)
 ```
 Następnym krokiekm, opisanym w innym dokumencie, będzie obliczanie wskaźników zagregowanych na podstawie tabel pośrednich wygenerowanych z użyciem funkcji opisanych w tym dokumencie.
