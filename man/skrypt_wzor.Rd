@@ -6,7 +6,7 @@
 \usage{
 skrypt_wzor(
   sciezka_docelowa,
-  sciezka_tab_posrednie,
+  plik_tab_posrednie,
   rok_ukonczenia = 2024,
   rodzaj_wsk,
   podzial_grupy_df
@@ -16,8 +16,8 @@ skrypt_wzor(
 \item{sciezka_docelowa}{ścieżka w formacie tekstowym, w ktorej mają być
 zapisane wygenerowane skrypty}
 
-\item{sciezka_tab_posrednie}{ścieżka w formacie tekstowym, w ktorej znajdują
-się tabele pośrednie}
+\item{plik_tab_posrednie}{ścieżka do pliku w formacie tekstowym, w ktorej
+znajdują się tabele pośrednie}
 
 \item{rok_ukonczenia}{rok, którym absolwent ukończył szkołę (jest to tym
 samym rok monitoringu)}

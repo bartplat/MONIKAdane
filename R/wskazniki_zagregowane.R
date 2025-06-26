@@ -136,8 +136,8 @@ skrypty_podzial <- function(nrow, podzial = 11) {
 #' ustalonej w argumencie `podzial` funkcji [skrypty_podzial()].
 #' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
 #' zapisane wygenerowane skrypty
-#' @param sciezka_tab_posrednie ścieżka w formacie tekstowym, w ktorej znajdują
-#' się tabele pośrednie
+#' @param plik_tab_posrednie ścieżka do pliku w formacie tekstowym, w ktorej
+#' znajdują się tabele pośrednie
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
 #' @param rodzaj_wsk ciąg znaków określający dla jakiego rodzaju wskaźników
@@ -157,13 +157,13 @@ skrypty_podzial <- function(nrow, podzial = 11) {
 #' @seealso [definicje_podzialu()]
 #' @seealso [przygotuj_tabele_posrednie()]
 #' @export
-skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
+skrypt_wzor <- function(sciezka_docelowa, plik_tab_posrednie,
                         rok_ukonczenia = 2024, rodzaj_wsk,
                         podzial_grupy_df) {
   rodzaje <- c("szk_god", "god1_god2", "szkozaw", "woj")
   
   stopifnot(is.character(sciezka_docelowa) & length(sciezka_docelowa) > 0,
-            is.character(sciezka_tab_posrednie) & length(sciezka_tab_posrednie) > 0,
+            is.character(plik_tab_posrednie) & length(plik_tab_posrednie) > 0,
             rodzaj_wsk %in% rodzaje,
             "Do argumentu `rodzaj_wsk` należy przekazać tylko jedną wartość." = length(rodzaj_wsk) == 1,
             is.numeric(rok_ukonczenia),
@@ -177,9 +177,9 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
       "library(MONIKAdane)",
       "library(beepr)",
       "# ładownaie danych",
-      paste0("load(\"", sciezka_tab_posrednie, "\")"),
-      paste0("load(\"", sciezka_docelowa, "\")"),
-      "grupy1 = grupy[maska,]",
+      paste0("load(\"", plik_tab_posrednie, "\")"),
+      paste0("load(\"", sciezka_docelowa, "grupy_szk_god.RData\")"),
+      "grupy1 = grupy_szk[maska,]",
       "# liczenie wskaźników",
       paste0("wsk = agreguj_1rokpo_adm(wsk2 = p2, wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
       "szk = wsk$grupy",
@@ -214,9 +214,9 @@ skrypt_wzor <- function(sciezka_docelowa, sciezka_tab_posrednie,
       "library(MONIKAdane)",
       "library(beepr)",
       "# ładownaie danych",
-      paste0("load(\"", sciezka_tab_posrednie, "\")"),
-      paste0("load(\"", sciezka_docelowa, "\")"),
-      "grupy1 = grupy[maska,]",
+      paste0("load(\"", plik_tab_posrednie, "\")"),
+      paste0("load(\"", sciezka_docelowa, "grupy_szkozaw.RData\")"),
+      "grupy1 = grupy_szkozaw[maska,]",
       "# liczenie wskaźników",
       paste0("wsk = agreguj_szkozaw_1rokpo_adm4(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
       "szk = wsk$grupy",
