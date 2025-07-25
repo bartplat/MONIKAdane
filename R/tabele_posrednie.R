@@ -1,108 +1,10 @@
 #' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
 #' @description
-#' Funkcja rozłącza obiekt z tabelami pośrednimi przygotowanymi przez Tomka na
-#' oddzielne obiekty oraz dokonuje drobnych testów przed rozpoczęciem
-#' przygotowywania tabel do dalszych etapów pracy.
-#' @param sciezka_tab_posrednie ścieżka w formacie tekstowym, w ktorej znajdują
-#' się tabele pośrednie
-#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
-#' zapisane surowe tabele pośrednie
-#' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
-#' samym rok monitoringu)
-#' @importFrom dplyr %>% left_join select all_of join_by
-#' @return obiekt `.RData` z tabelami pośrednimi
-#' @export
-rozdziel_tabele <- function(sciezka_tab_posrednie, sciezka_docelowa,
-                            rok_ukonczenia = 2024) {
-  stopifnot(is.character(sciezka_tab_posrednie),
-            is.character(sciezka_docelowa),
-            grepl(".RData$", sciezka_tab_posrednie) | grepl("rds$", sciezka_tab_posrednie))
-  
-  czas_start <- Sys.time()
-  cat("\nRozpoczęto wczytywanie tabel pośrednich: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), sep = "")
-  obiekt_tabele <- load(sciezka_tab_posrednie)
-  
-  # if (length(obiekt_tabele) != 1) stop(paste0("Bład: Obiekt zawierający tabele pośrednie zawiera więcej niż jeden obiekt. Są to obiekty:\n"),
-  #                                     paste(ls(), collapse = "\n"))
-  
-  assign("tabele", get(obiekt_tabele))
-  
-  if (!"p1" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p1"))
-  if (!"p2" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p2"))
-  if (!"p3" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p3"))
-  if (!"p4" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p4"))
-  if (!"p5" %in% names(tabele)) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p5"))
-  
-  cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zakończono wczytywanie tabel pośrednich - wszystkie tabele od p1 do p5 były obecne w obiekcie.",
-      sep = "")
-  
-  # dodać tu jakiś check na kolumny - tylko te kluczowe (id_abs, służące do liczenia wskaźników)
-  
-  p1 <- tabele$p1
-  p2 <- tabele$p2
-  p3 <- tabele$p3
-  p4 <- tabele$p4
-  p5 <- tabele$p5
-  tabele = names(tabele)
-  
-  # zawężenie do rok_abs == 2024
-  cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zawężanie tabel pośrednich do bieżącej edycji monitoringu, czyli do ",
-      rok_ukonczenia + 1, " roku (absolwenci z rocznika ", rok_ukonczenia, ").",
-      sep = "")
-  p1 <- p1 %>% filter(rok_abs %in% rok_ukonczenia)
-  if (nrow(p1) == 0) stop(paste0("\nBłąd: Tabela p1, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
-  p2 <- p2 %>% filter(rok_abs %in% rok_ukonczenia)
-  if (nrow(p2) == 0) stop(paste0("\nBłąd: Tabela p2, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
-  p3 <- p3 %>% filter(rok_abs %in% rok_ukonczenia)
-  if (nrow(p3) == 0) stop(paste0("\nBłąd: Tabela p3, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
-  p4 <- p4 %>% filter(rok_abs %in% rok_ukonczenia)
-  if (nrow(p4) == 0) stop(paste0("\nBłąd: Tabela p4, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
-  p5 <- p5 %>% filter(rok_abs %in% rok_ukonczenia)
-  if (nrow(p5) == 0) stop(paste0("\nBłąd: Tabela p5, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
-  
-  # dołączanie 
-  cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
-  zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "teryt_woj", "teryt_pow")
-  if (length(setdiff(zmienneGrupujace, names(p3))) > 0) {
-    cat("\nW tabeli `p3` brakuje następujących kolumn: ", paste(setdiff(zmienneGrupujace, names(p3)), collapse = ", "), ". Zostaną one teraz dołączone z tabeli `p4`.", sep = "")
-    p3 <- p3 %>% 
-      left_join(p4 %>% select(id_szk, id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
-                join_by(id_abs, rok_abs))
-  } else {
-    cat("\nTabela `p3` ma wszystkie wymagane kolumny.")
-  }
-  if (length(setdiff(zmienneGrupujace, names(p3))) > 0) {
-    cat("\nW tabeli `p2` brakuje następujących kolumn: ", paste(setdiff(zmienneGrupujace, names(p2)), collapse = ", "), ". Zostaną one teraz dołączone z tabeli `p4`.", sep = "")
-    p2 <- p2 %>% 
-      left_join(p4 %>% select(id_szk, id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p2)))),
-                join_by(id_abs, rok_abs))
-  } else {
-    cat("\nTabela `p2` ma wszystkie wymagane kolumny.")
-  }
-  
-  # w przyszłości chciałbym mieć jakiś chceck na obecność folderu "data", ale muszę wykminić jak działają te środowiska
-  # if ("data" %in% list.dirs()) {
-  #   save(p1, p2, p3, p4, p5, file = "data/01_tabele_posrednie/tabele_posrednie_raw.RData")
-  # } else {
-  #   cat("\nWygląda na to, że ścieżka, w której miały zostać zapisane tabele pośrednie nie istnieje.")
-  # }
-  cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
-  for (i in tabele) {
-    save(list = i, file = paste0(sciezka_docelowa, i, "_raw.RData"))
-    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Tabela pośrednia *", i, "* została zapisana.", sep = "")
-  }
-  save(p1, p2, p3, p4, p5, file = paste0(sciezka_docelowa, "tabele_posrednie_raw.RData"))
-  cat("\nWszystkie tabele pośrednie zostały zapisane do obiektu `tabele_posrednie_raw.RData`.")
-  czas_stop = Sys.time()
-  czas_roznica = round(czas_stop - czas_start, 2)
-  cat("\nKoniec: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), sep = "")
-  cat("\nCzas działania funkcji: ", paste(as.numeric(czas_roznica), attr(czas_roznica, "units")), "\n", sep = "")
-}
-#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
-#' @description
 #' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
 #' dalszej części procesu przechodzenia od tabel pośrednich do generowania
 #' automatycznych raportów. 
+#' @param sciezka_tab_posrednie ścieżka w formacie tekstowym, w ktorej znajdują
+#' się tabele pośrednie
 #' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
 #' zapisane surowe tabele pośrednie
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
@@ -112,7 +14,7 @@ rozdziel_tabele <- function(sciezka_tab_posrednie, sciezka_docelowa,
 #' @return multiple `.RData` objects
 #' @seealso [rozdziel_tabele()]
 #' @export
-przygotuj_tabele_posrednie <- function(sciezka_docelowa,
+przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
                                        rok_ukonczenia = 2024) {
   tryCatch({
     log_file = paste0("przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
@@ -120,22 +22,35 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
     czas_start = Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     
-    stopifnot(is.character(sciezka_docelowa),
-              is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021)
+    stopifnot(is.character(sciezka_tab_posrednie),
+              is.character(sciezka_docelowa),
+              is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021,
+              grepl(".RData$", sciezka_tab_posrednie))
     
-    nazwy_tabel = c("p1_raw.RData", "p2_raw.RData", "p3_raw.RData", "p4_raw.RData", "p5_raw.RData")
+    # wczytywanie tabel
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęcie wczytywania obiektu z tabelami pośrednimi.", sep = "")
+    obiekt_tabele <- load(sciezka_tab_posrednie)
     
-    if (all(nazwy_tabel %in% list.files(sciezka_docelowa))) {
-      for (i in nazwy_tabel) {
-        load(paste0(sciezka_docelowa, i))
-        cat("\n", format(Sys.time(), "%H:%M:%S"), " - tabela pośrednia *", i, "* została pomyślnie wczytana.", sep = "")
-      }
-    } else {
-      stop(paste0("\nBłąd: Brak tabel pośrednich z sufiksem \"_raw\".\nFunkcja oczekuje w folderze: \"",
-                  sciezka_docelowa,
-                  "\" tabel o następujących nazwach:\n",
-                  paste(nazwy_tabel, collapse = "\n"), "\nTabele o takich nazwach zwracane są np. przez funkcję `rozdziel_tabele()`."))
-    }
+    if (!"p1" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p1"))
+    if (!"p2" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p2"))
+    if (!"p3" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p3"))
+    if (!"p4" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p4"))
+    if (!"p5" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p5"))
+    
+    # zawężenie do aktualnego roku zostania absolwentem (rok_abs == rok_ukonczenia)
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zawężanie tabel pośrednich do bieżącej edycji monitoringu, czyli do ",
+        rok_ukonczenia + 1, " roku (absolwenci z rocznika ", rok_ukonczenia, ").",
+        sep = "")
+    p1 <- p1 %>% filter(rok_abs %in% rok_ukonczenia)
+    if (nrow(p1) == 0) stop(paste0("\nBłąd: Tabela p1, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p2 <- p2 %>% filter(rok_abs %in% rok_ukonczenia)
+    if (nrow(p2) == 0) stop(paste0("\nBłąd: Tabela p2, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p3 <- p3 %>% filter(rok_abs %in% rok_ukonczenia)
+    if (nrow(p3) == 0) stop(paste0("\nBłąd: Tabela p3, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p4 <- p4 %>% filter(rok_abs %in% rok_ukonczenia)
+    if (nrow(p4) == 0) stop(paste0("\nBłąd: Tabela p4, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p5 <- p5 %>% filter(rok_abs %in% rok_ukonczenia)
+    if (nrow(p5) == 0) stop(paste0("\nBłąd: Tabela p5, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
     
     # Usuwam duplikaty
     duplikaty <- p4 %>% 
@@ -165,6 +80,18 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
     } else {
       cat("\nBrak zduplikowanych absolwentów w zbiorze.")
     }
+    
+    # dodawanie zmiennych grupujących do `p3` i `p2`
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
+    zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "teryt_pow_szk", "nazwa_zaw", "branza", "plec")
+    p3 <- p3 %>% 
+      left_join(p4 %>% select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
+                join_by(id_abs, rok_abs))
+    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p3 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
+    p2 <- p2 %>% 
+      left_join(p4 %>% select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p2)))),
+                join_by(id_abs, rok_abs))
+    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p2 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
     
     # przypomnienie o rekodowaniu zawodów eksperymentalnych
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie czy w zmiennej `p4$branza` występują braki danych.", sep = "")
@@ -205,6 +132,13 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
     powiat_sr_wynagrodzenie_na <- p3 %>% 
       filter(is.na(powiat_sr_wynagrodzenie))
     if (nrow(powiat_sr_wynagrodzenie_na) > 0) {
+      p3 <- uzupelnij_wynagrodzenie_powiat(tabela_p3 = p3,
+                                           rok_ukonczenia = rok_ukonczenia)
+    }
+    
+    powiat_sr_wynagrodzenie_na <- p3 %>% 
+      filter(is.na(powiat_sr_wynagrodzenie))
+    if (nrow(powiat_sr_wynagrodzenie_na) > 0) {
       wynagrodzenia_braki <- "\n* Braki danych w zmiennej `p3$powiat_sr_wynagrodzenie` - przed dalszą pracą należy je uzupełnić (np. za pomocą funkcji `uzupelnij_wynagrodzenie_powiat()`).\nMożliwe, że brakuje danych w powiecie Jastrzębie-Zdrój (teryt: 2467)"
     }
     
@@ -212,21 +146,10 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
       stop(paste(branze_braki, wynagrodzenia_braki, collapse = "\n"))
     }
     
-    # konwersja terytu na format 4-cyfrowy
-    teryty_p3 <- as.character(p3$teryt_pow)[1:1000]
-    if (any(nchar(teryty_p3) %in% c(5, 6))) {
-      cat("\n", format(Sys.time(), "%H:%M:%S"), " - Konwersja terytu powiatu na format 4-cyfrowy.", sep = "")
-      p3 <- p3 %>% 
-        mutate(teryt_pow = floor(teryt_pow / 100))
-    } else if (any(nchar(teryty_p3) %in% c(3, 4))) {
-      cat("\n", format(Sys.time(), "%H:%M:%S"), " - Terytu powiatu ma prawidłowy format 4-cyfrowy.", sep = "")
-    } else {
-      stop("Nieznany format terytu powiatu w tabeli `p3` - powinien być 5 lub 6-cio cyfrowy albo 3 lub 4 cyfrowy.")
-    }
-    
     # usuwanie twardych spacji w nazwach zawodów
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Usuwanie twardych spacji w nazwach zawodów.", sep = "")
     p4$nazwa_zaw <- gsub("\u00A0", " ", p4$nazwa_zaw, fixed = TRUE)
+    p4$nazwa_zaw <- trimws(p4$nazwa_zaw)
     
     # rekodowanie bednarskiej
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie czy w danych występuje Bednarska Szkoła Realna - rekodowanie na Liceum ogólnokształcące.", sep = "")
@@ -234,18 +157,6 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
       p4$typ_szk[p4$typ_szk == "Bednarska Szkoła Realna"] <- "Liceum ogólnokształcące"
       cat("\nW tabeli `p4` w zmiennej `typ_szk` wartość \"Bednarska Szkoła Realna\" została zmieniona na \"Liceum ogólnokształcące\".")
     }
-    
-    # dodawanie zmiennych grupujących do `p3` i `p2`
-    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
-    zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj", "teryt_pow", "nazwa_zaw", "branza", "plec")
-    p3 <- p3 %>% 
-      left_join(p4 %>% select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
-                join_by(id_abs, rok_abs))
-    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p3 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
-    p2 <- p2 %>% 
-      left_join(p4 %>% select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p2)))),
-                join_by(id_abs, rok_abs))
-    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p2 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
     
     # zapis
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
@@ -319,12 +230,13 @@ przygotuj_tabele_posrednie <- function(sciezka_docelowa,
 #' @export
 uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
                                            rok_ukonczenia = 2024, wynagrodzenia = NULL, force = FALSE) {
-  stopifnot(is.character(tabela_p3),
+  stopifnot(is.data.frame(tabela_p3),
             is.numeric(rok_ukonczenia),
             rok_ukonczenia > 2021,
             is.logical(force))
   
-  assign("p3", get(load(tabela_p3)))
+  # assign("p3", get(load(tabela_p3)))
+  assign("p3", tabela_p3)
   
   stopifnot("powiat_sr_wynagrodzenie" %in% names(p3))
   
@@ -431,13 +343,13 @@ uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
         select(teryt, powiat_sr_wynagrodzenie = wynagrodzenie_2023)
       
       p3 <- p3 %>% 
-        mutate(teryt_pow_szk = floor(teryt_pow_szk / 100)) %>% 
+        # mutate(teryt_pow_szk = floor(teryt_pow_szk / 100)) %>% 
         select(-powiat_sr_wynagrodzenie) %>%
         left_join(wskaznikiPow,
                   join_by(teryt_pow_szk == teryt))
       
       if (sum(is.na(p3$powiat_sr_wynagrodzenie)) == 0) {
-        save(p3, file = tabela_p3)
+        return(p3)
         cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dołączono dane o wynagrodzeniach z BDL.", sep = "")
       } else {
         stop("\nDołączono dane z BDL po imputacji ze względu na dynamikę zmiany wynagrodzenia w województwie, ale nadal wsytępuja braki w `p3$powiat_sr_wynagrodzenie`.")

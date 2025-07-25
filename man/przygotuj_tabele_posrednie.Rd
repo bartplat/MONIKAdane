@@ -4,9 +4,16 @@
 \alias{przygotuj_tabele_posrednie}
 \title{Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier}
 \usage{
-przygotuj_tabele_posrednie(sciezka_docelowa, rok_ukonczenia = 2024)
+przygotuj_tabele_posrednie(
+  sciezka_tab_posrednie,
+  sciezka_docelowa,
+  rok_ukonczenia = 2024
+)
 }
 \arguments{
+\item{sciezka_tab_posrednie}{ścieżka w formacie tekstowym, w ktorej znajdują
+się tabele pośrednie}
+
 \item{sciezka_docelowa}{ścieżka w formacie tekstowym, w ktorej mają być
 zapisane surowe tabele pośrednie}
 

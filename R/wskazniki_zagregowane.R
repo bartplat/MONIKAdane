@@ -218,9 +218,8 @@ skrypt_wzor <- function(sciezka_docelowa, plik_tab_posrednie,
       paste0("load(\"", sciezka_docelowa, "grupy_szkozaw.RData\")"),
       "grupy1 = grupy_szkozaw[maska,]",
       "# liczenie wskaźników",
-      paste0("wsk = agreguj_szkozaw_1rokpo_adm4(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
-      "szk = wsk$grupy",
-      "god = wsk$grupyOdniesienia",
+      paste0("wsk = agreguj_szkozaw_1rokpo_adm(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
+      "szkozaw = wsk$grupyOdniesienia",
       sep = "\n"
     )
     
@@ -238,7 +237,7 @@ skrypt_wzor <- function(sciezka_docelowa, plik_tab_posrednie,
         "\n",
         "# zapisywanie wskaźników\n",
         paste0("plik = paste0(\"", sciezka_docelowa, "partial/wsk_szkozaw_\", prefiks, \".RData\")\n"),
-        "save(szk, god, file = plik)\n",
+        "save(szkozaw, file = plik)\n",
         "beep(5)",
         sep = "",
         file = nazwa_pliku
@@ -388,7 +387,7 @@ zlacz_partial <- function(sciezka_partial, sciezka_zapisu, rodzaj_wsk) {
       env <- new.env()
       load(zbiory[[i]], envir = env)
       obiekty <- ls(env)
-      szkozaw_lista[[i]] <- get(obiekty, envir = env)
+      szkozaw_lista[[i]] <- get(obiekty[grepl("szkozaw", obiekty)], envir = env)
     }
     
     szkozaw <- do.call(rbind, szkozaw_lista)
