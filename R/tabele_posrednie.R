@@ -157,17 +157,70 @@ przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
       p4$typ_szk[p4$typ_szk == "Bednarska Szkoła Realna"] <- "Liceum ogólnokształcące"
       cat("\nW tabeli `p4` w zmiennej `typ_szk` wartość \"Bednarska Szkoła Realna\" została zmieniona na \"Liceum ogólnokształcące\".")
     }
+
+    # dodawanie zmiennej `adres_szk` do p6
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` do p6.", sep = "")
+    p6 <- p6 %>% 
+    mutate(
+      across(
+        nr_lokalu,
+        ~ifelse(. == "-", paste0(""), .)
+      )
+    ) %>% 
+    mutate(
+      adres_szk = ifelse(
+        is.na(ulica),
+        paste0(
+          miejscowosc,
+          " ",
+          nr_budynku,
+          ", ",
+            pna,
+            " ",
+            poczta
+          ),
+          paste0(
+            ulica,
+            " ",
+            nr_budynku,
+            ifelse(
+              nr_lokalu == "" | is.na(nr_lokalu),
+              paste0(", "),
+              paste0("/", nr_lokalu, ", ")
+            ),
+            pna,
+            " ",
+            poczta)
+          )
+      )
+    cat(
+      "\n",
+      "Dodano zmienną `adres_szk` do p6.\nLiczba braków danych: ",
+      sum(is.na(p6$adres_szk)),
+      sep = ""
+    )
+
+    # dodawanie zmiennej z adresem i nazwą do p4
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` i `nazwa_szk` do p4.", sep = "")
+    p4 <- p4 %>% 
+      left_join(
+        p6 %>% select(id_szk, nazwa_szk, adres_szk),
+        join_by(id_szk)
+      )
+    stopifnot(
+      c("adres_szk", "nazwa_szk") %in% names(p4)
+    )
     
     # zapis
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
-    save(p1, p2, p3, p4, p5, file = paste0(sciezka_docelowa,
-                                           "tabele_posrednie_wrz2024_rokabs", rok_ukonczenia, ".RData"))
-    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano PEŁNE tabele p1:p5.", sep = "")
+    save(p1, p2, p3, p4, p5, p6, file = paste0(sciezka_docelowa,
+                                           "tabele_posrednie_wrz2025_rokabs", rok_ukonczenia, ".RData"))
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano PEŁNE tabele p1:p6.", sep = "")
     save(p3, p4, file = paste0(sciezka_docelowa,
-                               "tabele_posrednie_wrz2024_p3p4_rokabs", rok_ukonczenia, ".RData"))
+                               "tabele_posrednie_wrz2025_p3p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p3:p4.", sep = "")
     save(p2, p3, p4, file = paste0(sciezka_docelowa,
-                                   "tabele_posrednie_wrz2024_p2-p4_rokabs", rok_ukonczenia, ".RData"))
+                                   "tabele_posrednie_wrz2025_p2-p4_rokabs", rok_ukonczenia, ".RData"))
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano okrojone tabele p2:p4.", sep = "")
     
     czas_stop <- Sys.time()
