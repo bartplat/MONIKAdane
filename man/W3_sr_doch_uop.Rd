@@ -4,21 +4,15 @@
 \alias{W3_sr_doch_uop}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-W3_sr_doch_uop(x, rok_od, mies_od = 9, rok_do, mies_do = 12, nauka)
+W3_sr_doch_uop(x, nauka)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{rok_od}{rok początku okresu, dla którego ma być policzony wskaźnik}
-
-\item{mies_od}{miesiąc początku okresu, dla którego ma być policzony wskaźnik}
-
-\item{rok_do}{rok końca okresu, dla którego ma być policzony wskaźnik}
-
-\item{mies_do}{miesiąc końca okresu, dla którego ma być policzony wskaźnik}
+\item{x}{ramka danych pośrednich P4}
 
 \item{nauka}{wartość TRUE/FALSE określająca czy status ma być liczony dla
 absolwentów uczących się czy nie uczących się}
+
+\item{wynagrodzenie_powiaty}{ramka danych pośrednich P3}
 }
 \value{
 list

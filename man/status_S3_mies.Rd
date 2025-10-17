@@ -22,28 +22,23 @@ list
 }
 \description{
 Funkcja licząca odsetek absolwentów o danym statusie
-edukacyjno-zawodowym (wskaźnik S3) w danym miesiącu \code{mies} dla raportu dla
-danego roku.
+edukacyjno-zawodowym (wskaźnik S3) w danym miesiącu dla raportu dla danego
+roku.
 }
 \details{
-W tej edycji pojawia się nowy status - bezrobocie rejestrowane,
-który został wyodrębniony ze statusu \code{neet}. Wyróżniamy następujące statusy
-(bez KUZ i KKZ):
+Wyróżniamy następujące statusy (bez KUZ i KKZ):
 \itemize{
-\item{ucz_prac}{nauka i praca}
-\item{tylko_ucz}{tylko nauka}
-\item{tylko_prac}{tylko praca}
-\item{bezrob}{zarejestrowany jako bezrobotny}
-\item{neet}{brak nauki i brak pracy lub brak informacji o tychże}
+\item{tylko_ucz}{Tylko nauka}
+\item{ucz_prac}{Nauka i praca}
+\item{tylko_prac}{Tylko praca}
+\item{bezrob}{Bezrobotny}
+\item{brak_danych}{Brak danych o aktywności}
 }
 Bezrobotni kontynuujący naukę niestacjonarnie nie są wykluczani z kategorii
 „Nauka”, więc określając ich status w danym miesiącu traktujemy ich jako
 osoby uczące się. W sytuacji gdy w tym samym miesiącu absolwent miał różne
 statusy, przypisujemy mu „bardziej aktywny” z tych statusów (np. „naukę” a
 nie „bezrobocie”).
-
-Zmienna \code{status} powinna mieć wartości w formacie skróconym, czyli powinny
-one być stworzone za pomocą argumentu \code{etykiety = FALSE} funkcji
-\link{\code{ind_status_S3}}, ponieważ nazwy statusów w tej formie są potem
-używane w szablonie raportu szkolnego.
+Wszystkie powyższe statusy są od tej edycji dodawane do tabel pośrednich p3,
+a ta funkcja jedynie zlicza odsetek ich występowania.
 }

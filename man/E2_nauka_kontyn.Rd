@@ -4,15 +4,10 @@
 \alias{E2_nauka_kontyn}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-E2_nauka_kontyn(x, rok, mies = 12)
+E2_nauka_kontyn(x)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{rok}{rok osiągnięcia statusu absolwenta}
-
-\item{mies}{miesiąc, dla którego ma być policzony wskaźnik - domyślnie
-grudzień}
+\item{x}{ramka danych pośrednich P4}
 }
 \value{
 list
@@ -20,6 +15,8 @@ list
 \description{
 Funkcja licząca wskaźnik E2 - Sposoby kontynuowania edukacji.
 Domyślnym okresem, w którym sprawdzany jest odsetek kontynuujących naukę jest
-grudzień roku ukończenia szkoły (\code{rok_abs}). Funkcja liczy wskaźnik dla
-pojedynczego okresu, a nie dla zakresu dat.
+grudzień roku ukończenia szkoły (zmienna \code{p4$typ_szk_kont6}).
+Od bieżącej edycji monitoringu informacja ta dołączona jest do tabeli p4 jako
+zmienna \code{p4$typ_szk_kont6}, gdzie wartość "6" oznacza 6 miesięcy od
+ukończenia szkoły (6 miesięcy od czerwca, czyli grudzień).
 }

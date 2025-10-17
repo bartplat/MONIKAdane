@@ -4,23 +4,16 @@
 \alias{B2_ods_bezrob}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-B2_ods_bezrob(x, rok, od = 9, do = 12)
+B2_ods_bezrob(x)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{rok}{rok lub zakres lat osiągnięcia statusu absolwenta}
-
-\item{od}{początek okresu wyliczania wskaźnika wyrażony miesiącem}
-
-\item{do}{koniec okresu wyliczania wskaźnika wyrażony miesiącem}
+\item{x}{ramka danych pośrednich P4}
 }
 \value{
 list
 }
 \description{
 Funkcja licząca na potrzeby szablonu raportu rozkład liczby
-miesięcy bezrobocia rejestrowanego wśród absolwentów w danym okresie.
-Domyślnie jest to okres między wrześniem a grudniem roku przekazanego w
-argumentach funkcji, ale te wartości można zmieniać.
+miesięcy bezrobocia rejestrowanego wśród absolwentów od września do grudnia w
+roku ukończenia szkoły.
 }

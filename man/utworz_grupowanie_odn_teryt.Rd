@@ -10,7 +10,7 @@ utworz_grupowanie_odn_teryt(
   ...,
   zmPominGrupaOdniesienia = any_of("id_szk"),
   idAbs = all_of(c("id_abs", "rok_abs")),
-  zmTerytPow = all_of("teryt_pow"),
+  zmTerytPow = all_of("teryt_pow_szk"),
   minN = 10,
   minM = 3,
   wykluczGrupeZGrupyOdniesienia = TRUE

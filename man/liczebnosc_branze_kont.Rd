@@ -4,16 +4,14 @@
 \alias{liczebnosc_branze_kont}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-liczebnosc_branze_kont(x, branza_kont_df, rok, mies = 12)
+liczebnosc_branze_kont(x, ROK, mies = 12)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{branza_kont_df}{ramka danych zawierająca informację o kontynuowaniu
+\item{x}{ramka danych zawierająca informację o kontynuowaniu
 kształcenia w danej branży (tabela danych pośrednich P2 lub zawierająca
 analogiczne informacje oraz te same nazwy kolumn co tabela P2)}
 
-\item{rok}{rok lub zakres lat osiągnięcia statusu absolwenta}
+\item{ROK}{rok osiągnięcia statusu absolwenta}
 
 \item{mies}{miesiąc, dla którego ma być policzony wskaźnik - domyślnie
 grudzień}

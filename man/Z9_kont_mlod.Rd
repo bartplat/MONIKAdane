@@ -14,7 +14,7 @@ Z9_kont_mlod(x, rok, mies = 9, nauka)
 \item{mies}{miesiąc, dla którego ma być policzony wskaźnik}
 
 \item{nauka}{wartość TRUE/FALSE określająca czy status ma być liczony dla
-absolwentów uczących się czy nie uczących się}
+absolwentów uczących się (TRUE) czy nie uczących się (FALSE)}
 }
 \value{
 list

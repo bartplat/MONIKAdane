@@ -4,19 +4,19 @@
 \alias{liczebnosc_dyscypliny}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-liczebnosc_dyscypliny(x, dyscyplina_kont_df, rok, mies = 12)
+liczebnosc_dyscypliny(x, ROK, mies = 12, plc = NULL)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{dyscyplina_kont_df}{ramka danych zawierająca informację o kontynuowaniu
+\item{x}{ramka danych zawierająca informację o kontynuowaniu
 kształcenia w danej dyscyplinie (tabela danych pośrednich P2 lub zawierająca
 analogiczne informacje oraz te same nazwy kolumn co tabela P2)}
 
-\item{rok}{rok lub zakres lat osiągnięcia statusu absolwenta}
+\item{ROK}{rok osiągnięcia statusu absolwenta}
 
 \item{mies}{miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
 to grudzień}
+
+\item{plc}{płeć absolwenta przekazana jako wartość tekstowa ("K" lub "M")}
 }
 \value{
 list
@@ -26,4 +26,5 @@ Funkcja licząca rozkład liczebności absolwentów kontynuujących
 naukę na studiach w podziale na dyscypliny. Funkcja liczy wskaźnik tylko dla
 absolwentów techników,liceów ogólnokształcących i branżowych szkół 2.
 stopnia.
+Dodatkowo funkcja daje możliwość wygenereowania rozkładu dla jednej z płci.
 }

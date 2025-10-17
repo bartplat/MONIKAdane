@@ -204,7 +204,7 @@ przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` i `nazwa_szk` do p4.", sep = "")
     p4 <- p4 %>% 
       left_join(
-        p6 %>% select(id_szk, nazwa_szk, adres_szk),
+        p6 %>% select(id_szk, nazwa_szk, adres_szk) %>% distinct(),
         join_by(id_szk)
       )
     stopifnot(

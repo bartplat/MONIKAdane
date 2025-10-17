@@ -4,16 +4,14 @@
 \alias{liczebnosc_dziedziny}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-liczebnosc_dziedziny(x, dziedzina_kont_df, rok, mies = 12)
+liczebnosc_dziedziny(x, ROK, mies = 12)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{dziedzina_kont_df}{ramka danych zawierająca informację o kontynuowaniu
+\item{x}{ramka danych zawierająca informację o kontynuowaniu
 kształcenia w danej dziedzinie (tabela danych pośrednich P2 lub zawierająca
 analogiczne informacje oraz te same nazwy kolumn co tabela P2)}
 
-\item{rok}{rok lub zakres lat osiągnięcia statusu absolwenta}
+\item{ROK}{rok osiągnięcia statusu absolwenta}
 
 \item{mies}{miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
 to grudzień}

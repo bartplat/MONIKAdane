@@ -4,28 +4,19 @@
 \alias{Z4_ods_prac_mies}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-Z4_ods_prac_mies(x, rok_od, mies_od = 9, rok_do, mies_do = 12, nauka)
+Z4_ods_prac_mies(x, nauka)
 }
 \arguments{
-\item{x}{ramka danych pośrednich P3}
-
-\item{rok_od}{rok początku okresu, dla którego ma być policzony wskaźnik}
-
-\item{mies_od}{miesiąc początku okresu, dla którego ma być policzony wskaźnik}
-
-\item{rok_do}{rok końca okresu, dla którego ma być policzony wskaźnik}
-
-\item{mies_do}{miesiąc końca okresu, dla którego ma być policzony wskaźnik}
+\item{x}{ramka danych pośrednich P4}
 
 \item{nauka}{wartość TRUE/FALSE określająca czy status ma być liczony dla
-absolwentów uczących się czy nie uczących się}
+absolwentów uczących się (TRUE) czy nie uczących się (FALSE)}
 }
 \value{
 list
 }
 \description{
-Funkcja licząca na potrzeby szablonu raportu odsetek pracujących
-w danym miesiącu w podziale na pobierających i nie pobierających nauki.
-Domyślnie jest to okres między wrześniem a grudniem roku przekazanego w
-argumentach funkcji, ale te wartości można zmieniać.
+Funkcja licząca odsetek pracujących w okresie od września do
+grudnia roku ukończenia szkoły w podziale na pobierających i nie
+pobierających naukę.
 }
