@@ -483,81 +483,47 @@ Z9_kont_mlod <- function(x, rok, mies = 9, nauka) {
 #' w których dochód był niezerowy. Następnie na tych indywidualnych wartościach
 #' liczone są statystyki opisowe dla zadanego poziomu agregacji.
 #' @param x ramka danych pośrednich P4
-#' @param wynagrodzenie_powiaty ramka danych pośrednich P3
 #' @param nauka wartość TRUE/FALSE określająca czy status ma być liczony dla
 #' absolwentów uczących się czy nie uczących się
 #' @return list
-#' @importFrom dplyr %>% filter group_by reframe
+#' @importFrom dplyr %>% reframe
 #' n_distinct
 #' @export
 W3_sr_doch_uop = function(x, nauka) {
-
-  # tu czekam na zmienne od Tomka
   stopifnot(
     is.data.frame(x),
-    c("sr_wynagr_uop_n_r0_wrzgru", "sr_wynagr_uop_nn_r0_wrzgru") %in% names(x),
-    is.data.frame(wynagrodzenie_powiaty),
-    "powiat_sr_wynagrodzenie" %in% names(wynagrodzenie_powiaty),
+    c("sr_wynagr_uop_nauka_r0_wrzgru", "sr_wynagr_uop_bez_nauki_r0_wrzgru") %in% names(x),
     is.logical(nauka)
   )
   
-  
-    # if (nauka) {
-    #   x <- x %>%
-    #   filter((.data$nauka2 == 1 | .data$nauka_szk_abs == 1) & !is.na(.data$wynagrodzenie_uop) & !is.na(.data$powiat_sr_wynagrodzenie),
-    #   .data$wynagrodzenie_uop > 0,
-    #   .data$powiat_sr_wynagrodzenie > 0)
-      
-    #   x %>%
-    #   group_by(.data$id_abs, .data$okres) %>%
-    #   reframe(
-    #     rel_sred_ind_mies = .data$wynagrodzenie_uop / .data$powiat_sr_wynagrodzenie
-    #   ) %>%
-    #   group_by(.data$id_abs) %>%
-    #   reframe(
-    #     rel_sred_ind = mean(.data$rel_sred_ind_mies, na.rm = TRUE)
-    #   ) %>%
-    #   reframe(
-    #     n = n_distinct(.data$id_abs),
-    #     sred = round(mean(.data$rel_sred_ind), 2),
-    #     q5 = unname(round(quantile(.data$rel_sred_ind, 0.05), 2)),
-    #     q25 = unname(round(quantile(.data$rel_sred_ind, 0.25), 2)),
-    #     med = unname(round(quantile(.data$rel_sred_ind, 0.5), 2)),
-    #     q75 = unname(round(quantile(.data$rel_sred_ind, 0.75), 2)),
-    #     q95 = unname(round(quantile(.data$rel_sred_ind, 0.95), 2))) %>%
-    #     as.list() %>%
-    #     return()
-    #   } else {
-    #     x = x %>%
-    #     filter(.data$nauka2 == 0 & !is.na(.data$wynagrodzenie_uop) & !is.na(.data$powiat_sr_wynagrodzenie),
-    #     .data$wynagrodzenie_uop > 0,
-    #     .data$powiat_sr_wynagrodzenie > 0) %>%
-    #     group_by(.data$id_abs, .data$okres)
-        
-    #     x %>%
-    #     group_by(.data$id_abs, .data$okres) %>%
-    #     reframe(
-    #       rel_sred_ind_mies = .data$wynagrodzenie_uop / .data$powiat_sr_wynagrodzenie
-    #     ) %>%
-    #     group_by(.data$id_abs) %>%
-    #     reframe(
-    #       rel_sred_ind = mean(.data$rel_sred_ind_mies, na.rm = TRUE)
-    #     ) %>%
-    #     reframe(
-    #       n = n_distinct(.data$id_abs),
-    #       sred = round(mean(.data$rel_sred_ind), 2),
-    #       q5 = unname(round(quantile(.data$rel_sred_ind, 0.05), 2)),
-    #       q25 = unname(round(quantile(.data$rel_sred_ind, 0.25), 2)),
-    #       med = unname(round(quantile(.data$rel_sred_ind, 0.5), 2)),
-    #       q75 = unname(round(quantile(.data$rel_sred_ind, 0.75), 2)),
-    #       q95 = unname(round(quantile(.data$rel_sred_ind, 0.95), 2))
-    #     ) %>%
-    #     as.list() %>%
-    #     return()
-    #   }
-    # } else {
-    #   return(list(n = 0))
+  if (nauka) {    
+    x %>%
+      reframe(
+        n = n_distinct(id_abs),
+        sred = round(mean(sr_wynagr_uop_nauka_r0_wrzgru, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.95, na.rm = TRUE), 2))
+      ) %>%
+      as.list() %>%
+      return()
+    } else {
+      x %>%
+      reframe(
+        n = n_distinct(id_abs),
+        sred = round(mean(sr_wynagr_uop_bez_nauki_r0_wrzgru, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.95, na.rm = TRUE), 2))
+      ) %>%
+      as.list() %>%
+      return()
     }
+  }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
 #' @description Funkcja licząca na potrzeby szablonu raportu rozkład liczby
 #' miesięcy bezrobocia rejestrowanego wśród absolwentów od września do grudnia w
@@ -626,11 +592,9 @@ liczebnosc_branze_ucz = function(x) {
         )
       )
     } else {
-      n_dist <- n_distinct(x$id_abs)
-
       x %>%
         count(branza) %>%
-        mutate(odsetek = n / n_dist) %>% 
+        mutate(odsetek = n / sum(n)) %>% 
         as.list() %>% 
         return()
     }
@@ -643,163 +607,40 @@ liczebnosc_branze_ucz = function(x) {
   }
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
-#' @description Funkcja licząca rozkład liczebności absolwentów kontynuujących
-#' naukę w szkołach branżowych 2. stopnia w podziale na branże. Dodatkowo,
-#' funkcja liczy liczebności absolwentów w branżach, a informacja ta służy jako
-#' podstawa do definiowania warunków w szablonie raportu dla szkół branżowych 1.
-#' stopnia. Funkcja ma sens tylko dla absolwentów szkół branżowych 1. stopnia,
-#' ponieważ tylko oni mogą kontynuować naukę w szkołach branżowych 2. stopnia.
-#' @details UWAGA: Wynikiem działania funkcji jest rozkład liczebności, w którym
-#' nie odfiltrowuje się obserwacji poniżej 10 absolwentów, więc należy to zrobić
-#' na poziomie szablonu raportu.
+#' @description Funkcja licząca rozklad zmeinnej z tabeli P2 przekazanej w
+#' argumencie funkcji. Zmienne, dla których zaprojektowano funkjcę to:
+#' \itemize{
+#'  \item{\code{dyscyplina_wiodaca_kont}}{Dyscyplina studiów, w której absolwent
+#'  kontynuował naukę}
+#'  \item{\code{dziedzina_kont}}{Dziedzina studiów, w której absolwent
+#'  kontynuował naukę na studiach}
+#'  \item{\code{branza_kont}}{Branża zawodu KZSB, w której absolwent kontynuował
+#'  naukę w szkole kształcącej w zawodzie}
+#' }
 #' @param x ramka danych zawierająca informację o kontynuowaniu
-#' kształcenia w danej branży (tabela danych pośrednich P2 lub zawierająca
-#' analogiczne informacje oraz te same nazwy kolumn co tabela P2)
+#' kształcenia w danej dziedzinie/dyscyplinie/branży (tabela danych pośrednich
+#' P2 lub zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela
+#' P2)
 #' @param ROK rok osiągnięcia statusu absolwenta
-#' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie
-#' grudzień
+#' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
+#' to grudzień
+#' @param zmienna zmienna, której rozkład ma zwrócic funkcja
+#' @param plc płeć absolwenta przekazana jako wartość tekstowa ("K" lub "M") -
+#' dla rozkładów przez płeć
 #' @return list
-#' @importFrom dplyr %>% filter count mutate select left_join n_distinct
+#' @importFrom dplyr %>% filter count mutate rename
 #' @importFrom tibble is_tibble
 #' @export
-liczebnosc_branze_kont = function(x, ROK, mies = 12) {
+rozklad_liczebnosc = function(x, ROK = 2024, mies = 12, zmienna, plc = NULL) {
   stopifnot(
     is.data.frame(x) | is_tibble(x),
-    "branza_kont" %in% names(x),
+    c("dyscyplina_wiodaca_kont", "branza_kont", "dziedzina_kont") %in% names(x),
     is.numeric(ROK),
-    ROK %in% c(2023, 2024),
+    ROK %in% 2024,
     is.numeric(mies),
     mies %in% c(1:12)
   )
   
-  if (any(unique(x$typ_szk) == "Branżowa szkoła I stopnia")) {
-    x <- x %>%
-      filter(
-        rok %in% ROK,
-        miesiac %in% mies,
-        !(is.na(branza_kont))
-      )
-    
-    if (nrow(x) == 0) {
-      return(
-        list(
-          branza_kont = NA_character_,
-          n = 0,
-          odsetek = NA_integer_
-        )
-      )
-    } else {
-      n_dist <- n_distinct(x$id_abs)
-      
-      x %>%
-        count(branza_kont) %>%
-        mutate(odsetek = n / n_dist) %>% 
-        as.list() %>% 
-        return()
-    }
-  } else {
-    return(
-      list(
-        branza_kont = NA_character_,
-        n = 0,
-        odsetek = NA_integer_
-      )
-    )
-  }
-}
-#' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
-#' @description Funkcja licząca rozkład liczebności absolwentów kontynuujących
-#' naukę na studiach w podziale na dziedziny. Funkcja liczy wskaźnik tylko dla
-#' absolwentów techników,liceów ogólnokształcących i branżowych szkół 2.
-#' stopnia.
-#' @param x ramka danych zawierająca informację o kontynuowaniu
-#' kształcenia w danej dziedzinie (tabela danych pośrednich P2 lub zawierająca
-#' analogiczne informacje oraz te same nazwy kolumn co tabela P2)
-#' @param ROK rok osiągnięcia statusu absolwenta
-#' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
-#' to grudzień
-#' @return list
-#' @importFrom dplyr %>% filter .data count mutate select left_join n_distinct
-#' slice_max join_by
-#' @importFrom tibble is_tibble
-#' @export
-liczebnosc_dziedziny = function(x, ROK, mies = 12) {
-  stopifnot(
-    is.data.frame(x) | is_tibble(x),
-    "dziedzina_kont" %in% names(x),
-    is.numeric(ROK),
-    ROK %in% c(2023, 2024),
-    is.numeric(mies),
-    mies %in% c(1:12)
-  )
-
-  if (any(unique(x$typ_szk) %in% c("Technikum",
-                                   "Liceum ogólnokształcące",
-                                   "Branżowa szkoła II stopnia",
-                                   "Szkoła policealna"))) {
-
-    x <- x %>%
-      filter(
-        rok %in% ROK,
-        miesiac %in% mies,
-        !(is.na(dziedzina_kont))
-      )
-
-    if (nrow(x) == 0) {
-      return(
-        list(
-          dziedzina_kont = NA_character_,
-          n = 0,
-          odsetek = NA_integer_
-        )
-      )
-    } else {
-      n_dist <- n_distinct(x$id_abs)
-
-      x %>%
-        count(dziedzina_kont) %>%
-        mutate(odsetek = n / n_dist) %>% 
-        as.list() %>% 
-        return()
-    }
-  } else {
-    return(
-      list(
-        dziedzina_kont = NA_character_,
-        n = 0,
-        odsetek = NA_integer_
-      )
-    )
-  }
-}
-#' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
-#' @description Funkcja licząca rozkład liczebności absolwentów kontynuujących
-#' naukę na studiach w podziale na dyscypliny. Funkcja liczy wskaźnik tylko dla
-#' absolwentów techników,liceów ogólnokształcących i branżowych szkół 2.
-#' stopnia.
-#' Dodatkowo funkcja daje możliwość wygenereowania rozkładu dla jednej z płci.
-#' @param x ramka danych zawierająca informację o kontynuowaniu
-#' kształcenia w danej dyscyplinie (tabela danych pośrednich P2 lub zawierająca
-#' analogiczne informacje oraz te same nazwy kolumn co tabela P2)
-#' @param ROK rok osiągnięcia statusu absolwenta
-#' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
-#' to grudzień
-#' @param plc płeć absolwenta przekazana jako wartość tekstowa ("K" lub "M")
-#' @return list
-#' @importFrom dplyr %>% filter .data count mutate select left_join n_distinct
-#' slice_max join_by
-#' @importFrom tibble is_tibble
-#' @export
-liczebnosc_dyscypliny = function(x, ROK, mies = 12, plc = NULL) {
-  stopifnot(
-    is.data.frame(x) | is_tibble(x),
-    c("dyscyplina_wiodaca_kont", "typ_szk") %in% names(x),
-    is.numeric(ROK),
-    ROK %in% c(2023, 2024),
-    is.numeric(mies),
-    mies %in% c(1:12)
-  )
-
   if (!is.null(plc)) {
     stopifnot(
       "plec" %in% names(x),
@@ -808,49 +649,26 @@ liczebnosc_dyscypliny = function(x, ROK, mies = 12, plc = NULL) {
     )
   }
 
-  if (any(unique(x$typ_szk) %in% c("Technikum",
-                                   "Liceum ogólnokształcące",
-                                   "Branżowa szkoła II stopnia",
-                                   "Szkoła policealna"))) {
-
-    x <- x %>%
-      filter(
-        rok %in% ROK,
-        miesiac %in% mies,
-        !(is.na(dyscyplina_wiodaca_kont)),
-        (is.null(plc) | plec %in% plc)
-      )
-
-    if (nrow(x) == 0) {
-      return(
-        list(
-          dyscyplina_wiodaca_kont = NA_character_,
-          n = 0,
-          odsetek = NA_integer_,
-          plec = unique(plc)
-        )
-      )
-    } else {
-      n_dist <- n_distinct(x$id_abs)
-
-      x %>%
-        count(dyscyplina_wiodaca_kont) %>%
-        mutate(
-          odsetek = n / n_dist,
-          plec = unique(plc)
-        ) %>% 
-        as.list() %>% 
-        return()
-    }
-  } else {
-    return(
-      list(
-        dyscyplina_wiodaca_kont = NA_character_,
-        n = 0,
-        odsetek = NA_integer_,
-        plec = unique(plc)
-      )
-    )
+  x <- x %>%
+  filter(
+    rok %in% ROK,
+    miesiac %in% mies,
+    !(is.na({{ zmienna }})),
+    (is.null(plc) | plec %in% plc)
+  )
+  
+  if (nrow(x) == 0) {
+    return(list(kont = NA_character_))
+  } else {  
+    x %>%
+    count({{ zmienna }}) %>%
+    mutate(
+      pct = n / sum(n),
+      .keep = "unused"
+    ) %>% 
+    rename(kont = 1) %>% 
+    as.list() %>% 
+    return()
   }
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
@@ -871,12 +689,12 @@ liczebnosc_dyscypliny = function(x, ROK, mies = 12, plc = NULL) {
 #' slice_max join_by
 #' @importFrom tibble is_tibble
 #' @export
-rozklad_zawody <- function(x, ROK, mies = 12, zmienna) {
+rozklad_zawody <- function(x, ROK = 2024, mies = 12, zmienna) {
   stopifnot(
     is.data.frame(x) | is_tibble(x),
     c("dyscyplina_wiodaca_kont", "branza_kont") %in% names(x),
     is.numeric(ROK),
-    ROK %in% c(2023, 2024),
+    ROK %in% 2024,
     is.numeric(mies),
     mies %in% c(1:12)
   )
@@ -926,24 +744,4 @@ rozklad_zawody <- function(x, ROK, mies = 12, zmienna) {
     return(list(kont = NA_character_))
   }
 }
-#' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
-#' @description Funkcja licząca rozkład liczebności absolwentów kontynuujących
-#' naukę na studiach w podziale na dyscypliny i zawody - wynik działania funkcji
-#' jest wsadem do tabeli krzyżowej dyscypliny przez zawody w raporcie. Funkcja
-#' liczy wskaźnik tylko dla absolwentów techników, liceów ogólnokształcących i
-#' branżowych szkół 2. stopnia.
-#' Wskaźnik liczony jest tylko dla zawodów, w których uczyło się więcej niż 10
-#' absolwentów (n>=10).
-#' @param x ramka danych pośrednich P3
-#' @param dyscyplina_kont_df ramka danych zawierająca informację o kontynuowaniu
-#' kształcenia w danej dyscyplinie (tabela danych pośrednich P2 lub zawierająca
-#' analogiczne informacje oraz te same nazwy kolumn co tabela P2)
-#' @param rok rok lub zakres lat osiągnięcia statusu absolwenta
-#' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
-#' to grudzień
-#' @return list
-#' @importFrom dplyr %>% filter .data select left_join count mutate group_by
-#' ungroup rowwise across cur_column join_by
-#' @importFrom tidyr pivot_wider
-#' @importFrom tibble is_tibble
-#' @export
+  

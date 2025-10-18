@@ -47,12 +47,7 @@ używane do obliczania konkretnych wskaźników zagregowanych:
 \item{\code{\link{W3_sr_doch_uop}},}
 \item{\code{\link{B2_ods_bezrob}},}
 \item{\code{\link{liczebnosc_branze_ucz}},}
-\item{\code{\link{liczebnosc_branze_kont}},}
-\item{\code{\link{liczebnosc_dyscypliny}},}
-\item{\code{\link{liczebnosc_dziedziny}},}
-\item{\code{\link{dyscypliny_zawody}},}
-\item{\code{\link{branze_zawody}},}
-\item{\code{\link{licz_zawody}},}
-\item{\code{\link{liczebnosc_dyscypliny_plec}}}
+\item{\code{\link{rozklad_liczebnosc}},}
+\item{\code{\link{rozklad_zawody}}}
 }
 }

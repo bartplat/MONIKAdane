@@ -11,8 +11,6 @@ W3_sr_doch_uop(x, nauka)
 
 \item{nauka}{wartość TRUE/FALSE określająca czy status ma być liczony dla
 absolwentów uczących się czy nie uczących się}
-
-\item{wynagrodzenie_powiaty}{ramka danych pośrednich P3}
 }
 \value{
 list

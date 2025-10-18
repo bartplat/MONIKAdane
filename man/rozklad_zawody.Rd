@@ -4,7 +4,7 @@
 \alias{rozklad_zawody}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-rozklad_zawody(x, ROK, mies = 12, zmienna)
+rozklad_zawody(x, ROK = 2024, mies = 12, zmienna)
 }
 \arguments{
 \item{x}{ramka danych zawierająca informację o kontynuowaniu

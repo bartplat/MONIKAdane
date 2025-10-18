@@ -29,13 +29,8 @@
 #'  \item{\code{\link{W3_sr_doch_uop}},}
 #'  \item{\code{\link{B2_ods_bezrob}},}
 #'  \item{\code{\link{liczebnosc_branze_ucz}},}
-#'  \item{\code{\link{liczebnosc_branze_kont}},}
-#'  \item{\code{\link{liczebnosc_dyscypliny}},}
-#'  \item{\code{\link{liczebnosc_dziedziny}},}
-#'  \item{\code{\link{dyscypliny_zawody}},}
-#'  \item{\code{\link{branze_zawody}},}
-#'  \item{\code{\link{licz_zawody}},}
-#'  \item{\code{\link{liczebnosc_dyscypliny_plec}}}
+#'  \item{\code{\link{rozklad_liczebnosc}},}
+#'  \item{\code{\link{rozklad_zawody}}}
 #' }
 #' @export
 #' @importFrom dplyr %>% filter .data left_join
@@ -70,7 +65,14 @@ agreguj_1rokpo_adm = function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
       l_abs = l_abs(.data),
       l_kobiet = l_kobiet(.data),
       l_abs_zrodla = l_abs_zrodla(.data),
-      liczebnosc_branze_ucz = liczebnosc_branze_ucz(.data))
+      E2_nauka_kontyn = E2_nauka_kontyn(.data),
+      Z4_ucz = Z4_ods_prac_mies(.data, TRUE),
+      Z4_nie_ucz = Z4_ods_prac_mies(.data, FALSE),
+      W3_ucz = W3_sr_doch_uop(.data, TRUE),
+      W3_nie_ucz = W3_sr_doch_uop(.data, FALSE),
+      B2_bezrob = B2_ods_bezrob(.data),
+      liczebnosc_branze_ucz = liczebnosc_branze_ucz(.data)
+    )
 
     cat("\nWskaźniki wykorzystujące P3: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     wskazniki_3 = agreguj_wskazniki(
@@ -83,16 +85,10 @@ agreguj_1rokpo_adm = function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
       S3_11 = status_S3_mies(.data, min(rok_abso), 11, max(rok_abso), 11),
       S3_12 = status_S3_mies(.data, min(rok_abso), 12, max(rok_abso), 12),
       tab_s3_zaw = zawody_status_S3(.data, min(rok_abso), 12, max(rok_abso), 12),
-      E2_nauka_kontyn = E2_nauka_kontyn(.data, rok_abso, 12),
-      Z4_ucz = Z4_ods_prac_mies(.data, min(rok_abso), 9, max(rok_abso), 12, TRUE),
-      Z4_nie_ucz = Z4_ods_prac_mies(.data, min(rok_abso), 9, max(rok_abso), 12, FALSE),
       Z8_formy_ucz = Z8_formy_prac_mies(.data, rok_abso, 12, TRUE),
       Z8_formy_nie_ucz = Z8_formy_prac_mies(.data, rok_abso, 12, FALSE),
       Z9_mlod_ucz = Z9_kont_mlod(.data, rok_abso, 9, TRUE),
       Z9_mlod_nie_ucz = Z9_kont_mlod(.data, rok_abso, 9, FALSE),
-      W3_ucz = W3_sr_doch_uop(.data, rok_abso, 9, rok_abso, 12, TRUE),
-      W3_nie_ucz = W3_sr_doch_uop(.data, rok_abso, 9, rok_abso, 12, FALSE),
-      B2_bezrob = B2_ods_bezrob(.data, rok_abso, 9, 12),
       liczebnosc_branze_kont = liczebnosc_branze_kont(.data, wsk2, rok_abso, 12),
       liczebnosc_dziedziny = liczebnosc_dziedziny(.data, wsk2, rok_abso, 12),
       liczebnosc_dyscypliny = liczebnosc_dyscypliny(.data, wsk2, rok_abso, 12),
