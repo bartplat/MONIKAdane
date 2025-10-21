@@ -2,16 +2,12 @@
 #' na danych administracyjnych
 #' @description Funkcja obliczająca wskaźniki na poziomie zagregowanym na
 #' potrzeby raportów `1rokpo` (po roku od ukończenia szkoły).
-#' @param wsk2 ramka danych z tabeli pośredniej nr 2 (P2) z wynikami z 4.
-#' rundy monitoringu na danych administracyjnych
-#' @param wsk3 ramka danych z tabeli pośredniej nr 3 (P3) z wynikami z 4.
-#' rundy monitoringu na danych administracyjnych
-#' @param wsk4 ramka danych z tabeli pośredniej nr 4 (P4) z wynikami z 4.
-#' rundy monitoringu na danych administracyjnych
+#' @param wsk2 ramka danych - tabela pośrednia P2 (lub analogiczna)
+#' @param wsk3 ramka danych - tabela pośrednia P3 (lub analogiczna)
+#' @param wsk4 ramka danych - tabela pośrednia P4 (lub analogiczna)
 #' @param podzial_grupy ramka danych zawierająca definicje podziałów na grupy -
 #' np. zwrócona przez funkcję \code{\link{utworz_grupowanie_ze_zmiennej}}
-#' @param rok_abso rok, w którym grupa absolwentów uzyskała status absolwenta.
-#' Może to być więcej niż 1 wartość.
+#' @param rok_abso rok, w którym grupa absolwentów uzyskała status absolwenta
 #' @return list
 #' @seealso \code{\link{agreguj_wskazniki}} oraz przekazywane do niej funkcje
 #' używane do obliczania konkretnych wskaźników zagregowanych:
@@ -35,31 +31,31 @@
 #' @export
 #' @importFrom dplyr %>% filter .data left_join
 #' @importFrom tibble is_tibble
-agreguj_1rokpo_adm = function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
+agreguj_1rokpo_adm <- function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
   tryCatch({
     stopifnot(is.data.frame(wsk2) | is_tibble(wsk2),
               is.data.frame(wsk3) | is_tibble(wsk3),
               is.data.frame(wsk4) | is_tibble(wsk4),
               is.data.frame(podzial_grupy) | is_tibble(podzial_grupy),
-              rok_abso %in% c(2022, 2023) & length(rok_abso) %in% 1,
-              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj", "branza") %in% names(wsk2),
-              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj", "branza") %in% names(wsk3),
-              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj", "branza") %in% names(wsk4))
+              rok_abso %in% 2024 & length(rok_abso) %in% 1,
+              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "branza") %in% names(wsk2),
+              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "branza") %in% names(wsk3),
+              c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "branza") %in% names(wsk4))
 
-    log_file = paste0("agreguj_1rokpo_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
+    log_file <- paste0("agreguj_1rokpo_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
     sink(log_file)
-    czas_start = Sys.time()
+    czas_start <- Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
 
-    wsk4 = wsk4 %>%
+    wsk4 <- wsk4 %>%
       filter(.data$rok_abs %in% (rok_abso))
-    wsk3 = wsk3 %>%
+    wsk3 <- wsk3 %>%
       filter(.data$rok_abs %in% (rok_abso))
-    wsk2 = wsk2 %>%
+    wsk2 <- wsk2 %>%
       filter(.data$rok_abs %in% (rok_abso))
 
     cat("\nWskaźniki wykorzystujące P4: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
-    wskazniki_4 = agreguj_wskazniki(
+    wskazniki_4 <- agreguj_wskazniki(
       wsk4, podzial_grupy,
       dane_szkoly = dane_szkoly(.data),
       l_abs = l_abs(.data),
@@ -75,9 +71,9 @@ agreguj_1rokpo_adm = function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
     )
 
     cat("\nWskaźniki wykorzystujące P3: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
-    wskazniki_3 = agreguj_wskazniki(
+    wskazniki_3 <- agreguj_wskazniki(
       wskazniki = wsk3, grupy = podzial_grupy,
-      przekazArgumenty = list("rok_abso" = rok_abso, "wsk2" = wsk2),
+      przekazArgumenty = list("rok_abso" = rok_abso),
       S3_07 = status_S3_mies(.data, min(rok_abso), 7, max(rok_abso), 7),
       S3_08 = status_S3_mies(.data, min(rok_abso), 8, max(rok_abso), 8),
       S3_09 = status_S3_mies(.data, min(rok_abso), 9, max(rok_abso), 9),
@@ -88,21 +84,41 @@ agreguj_1rokpo_adm = function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
       Z8_formy_ucz = Z8_formy_prac_mies(.data, rok_abso, 12, TRUE),
       Z8_formy_nie_ucz = Z8_formy_prac_mies(.data, rok_abso, 12, FALSE),
       Z9_mlod_ucz = Z9_kont_mlod(.data, rok_abso, 9, TRUE),
-      Z9_mlod_nie_ucz = Z9_kont_mlod(.data, rok_abso, 9, FALSE),
-      liczebnosc_branze_kont = liczebnosc_branze_kont(.data, wsk2, rok_abso, 12),
-      liczebnosc_dziedziny = liczebnosc_dziedziny(.data, wsk2, rok_abso, 12),
-      liczebnosc_dyscypliny = liczebnosc_dyscypliny(.data, wsk2, rok_abso, 12),
-      dyscypliny_zawody = dyscypliny_zawody(.data, wsk2, rok_abso, 12),
-      branze_zawody = branze_zawody(.data, wsk2, rok_abso, 12),
-      dyscypliny_kob = liczebnosc_dyscypliny_plec(.data, wsk2, rok_abso, 12, "K"),
-      dyscypliny_mez = liczebnosc_dyscypliny_plec(.data, wsk2, rok_abso, 12, "M")
+      Z9_mlod_nie_ucz = Z9_kont_mlod(.data, rok_abso, 9, FALSE)
+    )
+
+    cat("\nWskaźniki wykorzystujące P2: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
+    wskazniki_2 <- agreguj_wskazniki(
+      wskazniki = wsk3, grupy = podzial_grupy,
+      przekazArgumenty = list("rok_abso" = rok_abso),
+      liczebnosc_branze_kont = rozklad_liczebnosc(.data, rok_abso, 12, branza_kont, NULL),
+      liczebnosc_dziedziny = rozklad_liczebnosc(.data, rok_abso, 12, dziedzina_kont, NULL),
+      liczebnosc_dyscypliny = rozklad_liczebnosc(.data, rok_abso, 12, dyscyplina_wiodaca_kont, NULL),
+      dyscypliny_zawody = rozklad_zawody(.data, rok_abso, 12, dyscyplina_wiodaca_kont),
+      branze_zawody = rozklad_zawody(.data, rok_abso, 12, branza_kont),
+      dyscypliny_kob = rozklad_liczebnosc(.data, rok_abso, 12, dyscyplina_wiodaca_kont, "K"),
+      dyscypliny_mez = rozklad_liczebnosc(.data, rok_abso, 12, dyscyplina_wiodaca_kont, "M")
     )
 
     cat("\nŁączenie wskaźników: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
-    wskazniki_4$grupy = wskazniki_4$grupy %>%
-      left_join(wskazniki_3$grupy, by = names(podzial_grupy))
-    wskazniki_4$grupyOdniesienia = wskazniki_4$grupyOdniesienia %>%
-      left_join(wskazniki_3$grupyOdniesienia, by = names(podzial_grupy))
+    wskazniki_4$grupy <- wskazniki_4$grupy %>%
+      left_join(
+        wskazniki_3$grupy,
+        join_by(names(podzial_grupy))
+      ) %>% 
+      left_join(
+        wskazniki_2$grupy,
+        join_by(names(podzial_grupy))
+      )
+    wskazniki_4$grupyOdniesienia <- wskazniki_4$grupyOdniesienia %>%
+      left_join(
+        wskazniki_3$grupyOdniesienia,
+        join_by(names(podzial_grupy))
+      ) %>% 
+      left_join(
+        wskazniki_2$grupyOdniesienia,
+        join_by(names(podzial_grupy))
+      )
 
     wskazniki = list(grupy = wskazniki_4$grupy, grupyOdniesienia = wskazniki_4$grupyOdniesienia)
     czas_stop = Sys.time()

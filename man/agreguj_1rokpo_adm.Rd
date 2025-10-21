@@ -8,20 +8,16 @@ na danych administracyjnych}
 agreguj_1rokpo_adm(wsk2, wsk3, wsk4, podzial_grupy, rok_abso)
 }
 \arguments{
-\item{wsk2}{ramka danych z tabeli pośredniej nr 2 (P2) z wynikami z 4.
-rundy monitoringu na danych administracyjnych}
+\item{wsk2}{ramka danych - tabela pośrednia P2 (lub analogiczna)}
 
-\item{wsk3}{ramka danych z tabeli pośredniej nr 3 (P3) z wynikami z 4.
-rundy monitoringu na danych administracyjnych}
+\item{wsk3}{ramka danych - tabela pośrednia P3 (lub analogiczna)}
 
-\item{wsk4}{ramka danych z tabeli pośredniej nr 4 (P4) z wynikami z 4.
-rundy monitoringu na danych administracyjnych}
+\item{wsk4}{ramka danych - tabela pośrednia P4 (lub analogiczna)}
 
 \item{podzial_grupy}{ramka danych zawierająca definicje podziałów na grupy -
 np. zwrócona przez funkcję \code{\link{utworz_grupowanie_ze_zmiennej}}}
 
-\item{rok_abso}{rok, w którym grupa absolwentów uzyskała status absolwenta.
-Może to być więcej niż 1 wartość.}
+\item{rok_abso}{rok, w którym grupa absolwentów uzyskała status absolwenta}
 }
 \value{
 list
