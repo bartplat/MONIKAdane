@@ -1,6 +1,5 @@
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^.*\.RData$
 ^doc$
 ^Meta$
