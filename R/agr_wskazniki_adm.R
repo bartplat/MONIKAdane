@@ -20,8 +20,8 @@ dane_szkoly <- function(x) {
   }
 
   list(
-    nazwa <- naz,
-    adres <- adr
+    nazwa = naz,
+    adres = adr
   ) %>%
     return()
 }
@@ -76,9 +76,9 @@ l_kobiet <- function(x) {
 l_abs_zrodla <- function(x) {
   x %>%
     reframe(
-      n_sio = sum(abs_w_sio, na.rm = TRUE),
+      # n_sio = sum(abs_w_sio, na.rm = TRUE),
       n_polon = sum(abs_w_polon, na.rm = TRUE),
-      n_cke = sum(abs_w_cke, na.rm = TRUE),
+      # n_cke = sum(abs_w_cke, na.rm = TRUE),
       n_zus = sum(abs_w_zus, na.rm = TRUE)
     ) %>%
     as.list() %>%
@@ -125,20 +125,26 @@ status_S3_mies <- function(x, rok_od, mies_od, rok_do, mies_do) {
   l_od <- data_na_okres(rok = rok_od, mies = mies_od)
   l_do <- data_na_okres(rok = rok_do, mies = mies_do)
   
-  x %>%
-  filter(
-    okres %in% seq(l_od, l_do, by = 1)
-  ) %>%
-  reframe(
-    n = n_distinct(id_abs),
-    tylko_ucz = sum(status == "Tylko nauka") / n,
-    ucz_prac = sum(status == "Nauka i praca") / n,
-    tylko_prac = sum(status == "Tylko praca") / n,
-    bezrob = sum(status == "Bezrobocie") / n,
-    brak_danych = sum(status == "Brak danych o aktywności") / n
-  ) %>%
-  as.list() %>%
-  return()
+  x <- x %>%
+    filter(
+      okres %in% seq(l_od, l_do, by = 1)
+    ) 
+
+  if (nrow(x) == 0) {
+    return(list(n = 0))
+  } else {
+    x %>%
+      reframe(
+        n = n_distinct(id_abs),
+        tylko_ucz = sum(status == "Tylko nauka") / n,
+        ucz_prac = sum(status == "Nauka i praca") / n,
+        tylko_prac = sum(status == "Tylko praca") / n,
+        bezrob = sum(status == "Bezrobocie") / n,
+        brak_danych = sum(status == "Brak danych o aktywności") / n
+      ) %>%
+      as.list() %>%
+      return()
+  } 
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
 #' @description Funkcja licząca odsetek absolwentów o danym statusie
@@ -221,7 +227,8 @@ zawody_status_S3 <- function(x, rok_od, mies_od, rok_do, mies_do) {
 #' ukończenia szkoły (6 miesięcy od czerwca, czyli grudzień).
 #' @param x ramka danych pośrednich P4
 #' @return list
-#' @importFrom dplyr %>% filter reframe n_distinct
+#' @importFrom dplyr n_distinct %>% pull mutate reframe across everything
+#' @importFrom tibble as_tibble
 #' @export
 E2_nauka_kontyn <- function(x) {
   stopifnot(
@@ -232,13 +239,16 @@ E2_nauka_kontyn <- function(x) {
   nka <- n_distinct(x$id_abs)
   
   x <- x %>% 
-    pull(typ_szk_kont6) %>% 
-    as.data.frame() %>% 
-    mutate(`Brak kontynuacji nauki` = ifelse(rowSums(., na.rm = TRUE) > 0, 0, 1)) %>%
-    colSums(na.rm = TRUE) %>% 
-    as.list()
+  pull(typ_szk_kont6) %>% 
+  as_tibble() %>% 
+  mutate(`Brak kontynuacji nauki` = ifelse(rowSums(., na.rm = TRUE) > 0, 0, 1)) %>% 
+  reframe(across(
+    everything(),
+    ~ sum(., na.rm = TRUE) / nka
+  )) %>% 
+  as.list()
   
-  x <- c(nka, x)
+  x <- c(list(n = nka), x)
 
   return(x)
 }
@@ -463,6 +473,8 @@ Z9_kont_mlod <- function(x, rok, mies = 9, nauka) {
         return()
       }
     }
+  } else {
+    return(list(n = 0))
   }
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
@@ -483,47 +495,68 @@ Z9_kont_mlod <- function(x, rok, mies = 9, nauka) {
 #' w których dochód był niezerowy. Następnie na tych indywidualnych wartościach
 #' liczone są statystyki opisowe dla zadanego poziomu agregacji.
 #' @param x ramka danych pośrednich P4
+#' @param tab_p3 ramka danych pośrednich P3
 #' @param nauka wartość TRUE/FALSE określająca czy status ma być liczony dla
 #' absolwentów uczących się czy nie uczących się
 #' @return list
 #' @importFrom dplyr %>% reframe
 #' n_distinct
 #' @export
-W3_sr_doch_uop = function(x, nauka) {
+W3_sr_doch_uop <- function(x, tab_p3, nauka, ROK = 2024) {
   stopifnot(
     is.data.frame(x),
+    is.data.frame(tab_p3),
     c("sr_wynagr_uop_nauka_r0_wrzgru", "sr_wynagr_uop_bez_nauki_r0_wrzgru") %in% names(x),
-    is.logical(nauka)
+    is.logical(nauka),
+    is.numeric(ROK)
   )
   
-  if (nauka) {    
+  tab_p3 <- tab_p3 %>% 
+    filter(okres %in% data_na_okres(rok = ROK, mies = 12)) %>% 
+    select(id_abs, powiat_sr_wynagrodzenie)
+  
+  if (nrow(tab_p3) == 0) {
+    stop("Tabela P3 po odfiltrowaniu ma 0 wierszy.")
+  }
+
+  if (nauka) {
     x %>%
+      left_join(
+        tab_p3,
+        join_by(id_abs)
+      ) %>% 
+      mutate(wynagr_rel = sr_wynagr_uop_nauka_r0_wrzgru / powiat_sr_wynagrodzenie) %>% 
       reframe(
         n = n_distinct(id_abs),
-        sred = round(mean(sr_wynagr_uop_nauka_r0_wrzgru, na.rm = TRUE), 2),
-        q5 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
-        q25 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
-        med = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
-        q75 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
-        q95 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.95, na.rm = TRUE), 2))
+        sred = round(mean(wynagr_rel, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(wynagr_rel, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(wynagr_rel, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(wynagr_rel, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(wynagr_rel, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(wynagr_rel, 0.95, na.rm = TRUE), 2))
       ) %>%
       as.list() %>%
       return()
-    } else {
-      x %>%
+  } else {
+    x %>%
+      left_join(
+        tab_p3,
+        join_by(id_abs)
+      ) %>% 
+      mutate(wynagr_rel = sr_wynagr_uop_bez_nauki_r0_wrzgru / powiat_sr_wynagrodzenie) %>% 
       reframe(
         n = n_distinct(id_abs),
-        sred = round(mean(sr_wynagr_uop_bez_nauki_r0_wrzgru, na.rm = TRUE), 2),
-        q5 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
-        q25 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
-        med = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
-        q75 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
-        q95 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.95, na.rm = TRUE), 2))
+        sred = round(mean(wynagr_rel, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(wynagr_rel, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(wynagr_rel, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(wynagr_rel, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(wynagr_rel, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(wynagr_rel, 0.95, na.rm = TRUE), 2))
       ) %>%
       as.list() %>%
       return()
     }
-  }
+}
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
 #' @description Funkcja licząca na potrzeby szablonu raportu rozkład liczby
 #' miesięcy bezrobocia rejestrowanego wśród absolwentów od września do grudnia w
@@ -617,7 +650,8 @@ liczebnosc_branze_ucz = function(x) {
 #'  \item{\code{branza_kont}}{Branża zawodu KZSB, w której absolwent kontynuował
 #'  naukę w szkole kształcącej w zawodzie}
 #' }
-#' @param x ramka danych zawierająca informację o kontynuowaniu
+#' @param x ramka danych indywidualnych - tabela pośrednia P4
+#' @param df_kont ramka danych zawierająca informację o kontynuowaniu
 #' kształcenia w danej dziedzinie/dyscyplinie/branży (tabela danych pośrednich
 #' P2 lub zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela
 #' P2)
@@ -631,10 +665,11 @@ liczebnosc_branze_ucz = function(x) {
 #' @importFrom dplyr %>% filter count mutate rename
 #' @importFrom tibble is_tibble
 #' @export
-rozklad_liczebnosc = function(x, ROK = 2024, mies = 12, zmienna, plc = NULL) {
+rozklad_liczebnosc <- function(x, df_kont, ROK = 2024, mies = 12, zmienna, plc = NULL) {
   stopifnot(
     is.data.frame(x) | is_tibble(x),
-    c("dyscyplina_wiodaca_kont", "branza_kont", "dziedzina_kont") %in% names(x),
+    is.data.frame(df_kont) | is_tibble(df_kont),
+    c("dyscyplina_wiodaca_kont", "branza_kont", "dziedzina_kont") %in% names(df_kont),
     is.numeric(ROK),
     ROK %in% 2024,
     is.numeric(mies),
@@ -649,26 +684,41 @@ rozklad_liczebnosc = function(x, ROK = 2024, mies = 12, zmienna, plc = NULL) {
     )
   }
 
-  x <- x %>%
-  filter(
-    rok %in% ROK,
-    miesiac %in% mies,
-    !(is.na({{ zmienna }})),
-    (is.null(plc) | plec %in% plc)
-  )
-  
-  if (nrow(x) == 0) {
-    return(list(kont = NA_character_))
-  } else {  
-    x %>%
-    count({{ zmienna }}) %>%
-    mutate(
-      pct = n / sum(n),
-      .keep = "unused"
+  df_kont <- df_kont %>% 
+    filter(
+      rok %in% ROK,
+      miesiac %in% mies,
+      !(is.na({{ zmienna }})),
+      (is.null(plc) | plec %in% plc)
     ) %>% 
-    rename(kont = 1) %>% 
-    as.list() %>% 
-    return()
+    select(id_abs, {{ zmienna }})
+
+  x <- x %>% 
+    left_join(
+      df_kont,
+      join_by(id_abs)
+    ) %>% 
+    filter(!(is.na({{ zmienna }})))
+
+  if (nrow(df_kont) == 0) {
+    return(list(n = 0))
+  } else if (nrow(x) == 0) {
+    return(list(n = 0))
+  } else {
+    x <- x %>%
+      count({{ zmienna }}) %>%
+      mutate(
+        pct = n / sum(n),
+      ) %>% 
+      rename(kont = 1)
+    
+    nka <- sum(x$n)
+
+    x <- x %>% 
+      select(-n) %>% 
+      as.list()
+
+    return(c(list(n = nka), x))
   }
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
@@ -677,7 +727,8 @@ rozklad_liczebnosc = function(x, ROK = 2024, mies = 12, zmienna, plc = NULL) {
 #' `p2$dyscyplina_wiodaca_kont`) absolwentów w podziale na wykonywany zawód. 
 #' Funkcja liczy wskaźnik tylko dla absolwentów techników, szkół policealnych i 
 #' branżowych szkół 2. stopnia.
-#' @param x ramka danych zawierająca informację o kontynuowaniu
+#' @param x ramka danych indywidualnych - tabela pośrednia P4
+#' @param df_kont ramka danych zawierająca informację o kontynuowaniu
 #' kształcenia w danej dyscyplinie lub branży (tabela danych pośrednich P2 lub
 #' zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela P2)
 #' @param ROK rok osiągnięcia statusu absolwenta
@@ -689,10 +740,11 @@ rozklad_liczebnosc = function(x, ROK = 2024, mies = 12, zmienna, plc = NULL) {
 #' slice_max join_by
 #' @importFrom tibble is_tibble
 #' @export
-rozklad_zawody <- function(x, ROK = 2024, mies = 12, zmienna) {
+rozklad_zawody <- function(x, df_kont, ROK = 2024, mies = 12, zmienna) {
   stopifnot(
     is.data.frame(x) | is_tibble(x),
-    c("dyscyplina_wiodaca_kont", "branza_kont") %in% names(x),
+    is.data.frame(df_kont) | is_tibble(df_kont),
+    c("dyscyplina_wiodaca_kont", "branza_kont") %in% names(df_kont),
     is.numeric(ROK),
     ROK %in% 2024,
     is.numeric(mies),
@@ -703,33 +755,46 @@ rozklad_zawody <- function(x, ROK = 2024, mies = 12, zmienna) {
                                    "Szkoła policealna",
                                    "Branżowa szkoła II stopnia"))) {
     
-    x <- x %>%
+    df_kont <- df_kont %>%
       filter(
         rok %in% ROK,
         miesiac %in% mies,
         !(is.na({{ zmienna }}))
-      )
+      ) %>% 
+      select(id_abs, {{ zmienna }})
+
+    x <- x %>% 
+      left_join(
+        df_kont,
+        join_by(id_abs)
+      ) %>% 
+      filter((!is.na({{ zmienna }})))
     
-    if (nrow(x) == 0) {
-      return(list(kont = NA_character_))
+    if (nrow(df_kont) == 0) {
+      return(list(n = 0))
+    } else if (nrow(x) == 0) {
+      return(list(n = 0))
     } else {
-      nki <- x %>%
-        count(nazwa_zaw, name = "n_total") %>%
-        filter(n_total >= 10)
+        nki <- x %>%
+          count(nazwa_zaw, name = "n_total") %>%
+          filter(n_total >= 10)
       
       if (nrow(nki) == 0) {
-        return(list(kont = NA_character_))
+        return(list(n = 0))
       }
       
-      x %>%
+      x <- x %>%
         filter(nazwa_zaw %in% nki$nazwa_zaw) %>%
         count(nazwa_zaw, {{ zmienna }}) %>%
         group_by(nazwa_zaw) %>% 
         mutate(
           pct = n / sum(n),
-          .keep = "unused"
         ) %>% 
-        ungroup() %>% 
+        ungroup()
+      
+      nka <- sum(x$n)
+
+      x <- x %>% 
         pivot_wider(
           id_cols = {{ zmienna }},
           names_from = nazwa_zaw,
@@ -737,11 +802,11 @@ rozklad_zawody <- function(x, ROK = 2024, mies = 12, zmienna) {
           values_fill = 0
         ) %>% 
         rename(kont = 1) %>% 
-        as.list() %>% 
-        return()
+        as.list()
+        
+      return(c(list(n = nka), x))
     }
   } else {
-    return(list(kont = NA_character_))
+    return(list(n = 0))
   }
 }
-  

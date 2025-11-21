@@ -4,10 +4,12 @@
 \alias{W3_sr_doch_uop}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-W3_sr_doch_uop(x, nauka)
+W3_sr_doch_uop(x, tab_p3, nauka, ROK = 2024)
 }
 \arguments{
 \item{x}{ramka danych pośrednich P4}
+
+\item{tab_p3}{ramka danych pośrednich P3}
 
 \item{nauka}{wartość TRUE/FALSE określająca czy status ma być liczony dla
 absolwentów uczących się czy nie uczących się}

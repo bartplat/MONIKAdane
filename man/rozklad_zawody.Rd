@@ -4,10 +4,12 @@
 \alias{rozklad_zawody}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-rozklad_zawody(x, ROK = 2024, mies = 12, zmienna)
+rozklad_zawody(x, df_kont, ROK = 2024, mies = 12, zmienna)
 }
 \arguments{
-\item{x}{ramka danych zawierająca informację o kontynuowaniu
+\item{x}{ramka danych indywidualnych - tabela pośrednia P4}
+
+\item{df_kont}{ramka danych zawierająca informację o kontynuowaniu
 kształcenia w danej dyscyplinie lub branży (tabela danych pośrednich P2 lub
 zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela P2)}
 

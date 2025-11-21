@@ -85,7 +85,7 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
   stopifnot(all(!is.na(x$podregion)))
   x <- x %>%
     select(all_of(c(idAbs, zmGrupujace, zmTerytPow, "podregion")), ...) %>%
-    mutate(teryt_woj = floor(.data[[zmTerytPow]] / 10000))
+    mutate(teryt_woj_szk = floor(.data[[zmTerytPow]] / 100))
   nazwyZastrzezone <- c("grupa", "odniesienie",
                         "nOdnPow", "mOdnPow", "nOdnPodreg", "mOdnPodreg",
                         "nOdnWoj", "mOdnWoj")
@@ -109,10 +109,10 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
   }
 
   x <- x %>%
-    select(all_of(c(idAbs, zmGrupujace, zmTerytPow, "podregion", "teryt_woj")))
+    select(all_of(c(idAbs, zmGrupujace, zmTerytPow, "podregion", "teryt_woj_szk")))
 
   grupy <- x %>%
-    count(across(all_of(c(zmGrupujace, zmTerytPow, "podregion", "teryt_woj"))),
+    count(across(all_of(c(zmGrupujace, zmTerytPow, "podregion", "teryt_woj_szk"))),
           name = "nGr") %>%
     mutate(grupa = cur_data() %>%
              select(all_of(zmGrupujace)) %>%
@@ -126,7 +126,7 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki(),
            odniesienieWoj = cur_data() %>%
-             select(all_of(c(zmGrupujace, "teryt_woj")),
+             select(all_of(c(zmGrupujace, "teryt_woj_szk")),
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki(),
            odniesienieOgpol = cur_data() %>%
@@ -134,7 +134,7 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki())
   x <- x %>%
-    left_join(grupy, by = c(zmGrupujace, zmTerytPow, "podregion", "teryt_woj"))
+    left_join(grupy, by = c(zmGrupujace, zmTerytPow, "podregion", "teryt_woj_szk"))
   grupy %>%
     left_join(x %>%
                 group_by(.data$odniesieniePow) %>%
@@ -208,7 +208,7 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
 utworz_warunki <- function(x) {
   x %>%
     mutate(across(where(is.character), ~paste0("'", ., "'")),
-           across(where(is.factor), ~paste("'", levels(.)[.], "'"))) %>%
+           across(where(is.factor), ~paste0("'", levels(.)[.], "'"))) %>%
     apply(1,
           function(x, zm) {
             return(paste(zm, x, sep = " %in% ", collapse = " & "))

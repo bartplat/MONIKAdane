@@ -4,10 +4,12 @@
 \alias{rozklad_liczebnosc}
 \title{Wskaźniki zagregowane dla monitoringu karier - dane administracyjne}
 \usage{
-rozklad_liczebnosc(x, ROK = 2024, mies = 12, zmienna, plc = NULL)
+rozklad_liczebnosc(x, df_kont, ROK = 2024, mies = 12, zmienna, plc = NULL)
 }
 \arguments{
-\item{x}{ramka danych zawierająca informację o kontynuowaniu
+\item{x}{ramka danych indywidualnych - tabela pośrednia P4}
+
+\item{df_kont}{ramka danych zawierająca informację o kontynuowaniu
 kształcenia w danej dziedzinie/dyscyplinie/branży (tabela danych pośrednich
 P2 lub zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela
 P2)}

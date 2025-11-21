@@ -179,28 +179,28 @@ skrypt_wzor <- function(sciezka_docelowa, plik_tab_posrednie,
       "# ładownaie danych",
       paste0("load(\"", plik_tab_posrednie, "\")"),
       paste0("load(\"", sciezka_docelowa, "grupy_szk_god.RData\")"),
-      "grupy1 = grupy_szk[maska,]",
+      "grupy1 <- grupy_szk[maska,]",
       "# liczenie wskaźników",
-      paste0("wsk = agreguj_1rokpo_adm(wsk2 = p2, wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
-      "szk = wsk$grupy",
-      "god = wsk$grupyOdniesienia",
+      paste0("wsk <- agreguj_1rokpo_adm(wsk2 = p2, wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
+      "szk <- wsk$grupy",
+      "god <- wsk$grupyOdniesienia",
       sep = "\n"
     )
     
     for (i in 1:nrow(podzial_grupy_df)) {
       nazwa_pliku = paste0(sciezka_docelowa, "skrypt_N", podzial_grupy_df$skrypt[i], ".R")
       cat(
-        "# parametry\nmaska = ",
+        "# parametry\nmaska <- ",
         podzial_grupy_df$od[i],
         ":",
         podzial_grupy_df$do[i],
-        "\nprefiks = \"N",
+        "\nprefiks <- \"N",
         podzial_grupy_df$skrypt[i],
         "\"\n",
         stale,
         "\n",
         "# zapisywanie wskaźników\n",
-        paste0("plik = paste0(\"", sciezka_docelowa, "partial/wsk_szk_god_\", prefiks, \".RData\")\n"),
+        paste0("plik <- paste0(\"", sciezka_docelowa, "partial/wsk_szk_god_\", prefiks, \".RData\")\n"),
         "save(szk, god, file = plik)\n",
         "beep(5)",
         sep = "",
@@ -216,27 +216,27 @@ skrypt_wzor <- function(sciezka_docelowa, plik_tab_posrednie,
       "# ładownaie danych",
       paste0("load(\"", plik_tab_posrednie, "\")"),
       paste0("load(\"", sciezka_docelowa, "grupy_szkozaw.RData\")"),
-      "grupy1 = grupy_szkozaw[maska,]",
+      "grupy1 <- grupy_szkozaw[maska,]",
       "# liczenie wskaźników",
-      paste0("wsk = agreguj_szkozaw_1rokpo_adm(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
-      "szkozaw = wsk$grupyOdniesienia",
+      paste0("wsk <- agreguj_szkozaw_1rokpo_adm(wsk3 = p3, wsk4 = p4, podzial_grupy = grupy1, rok_abso = ", rok_ukonczenia, ")"),
+      "szkozaw <- wsk$grupyOdniesienia",
       sep = "\n"
     )
     
     for (i in 1:nrow(podzial_grupy_df)) {
       nazwa_pliku = paste0(sciezka_docelowa, "skrypt_N", podzial_grupy_df$skrypt[i], ".R")
       cat(
-        "# parametry\nmaska = ",
+        "# parametry\nmaska <- ",
         podzial_grupy_df$od[i],
         ":",
         podzial_grupy_df$do[i],
-        "\nprefiks = \"N",
+        "\nprefiks <- \"N",
         podzial_grupy_df$skrypt[i],
         "\"\n",
         stale,
         "\n",
         "# zapisywanie wskaźników\n",
-        paste0("plik = paste0(\"", sciezka_docelowa, "partial/wsk_szkozaw_\", prefiks, \".RData\")\n"),
+        paste0("plik <- paste0(\"", sciezka_docelowa, "partial/wsk_szkozaw_\", prefiks, \".RData\")\n"),
         "save(szkozaw, file = plik)\n",
         "beep(5)",
         sep = "",
@@ -458,43 +458,45 @@ dodaj_odmiany <- function(wskazniki, rodzaj_wsk) {
       nest(.by = id_szk, .key = "odmiany")
     
     wskazniki <- wskazniki %>% 
-      left_join(odmiany, join_by(id_szk))
+      left_join(odmiany)
     
     return(wskazniki)
   } else if (rodzaj_wsk == "woj") {
-    wymagane_zmienne <- "teryt_woj"
+    wymagane_zmienne <- "teryt_woj_szk"
     stopifnot(
       all(wymagane_zmienne %in% names(wskazniki))
     )
     
     odmiany <- wskazniki %>% 
-      reframe(
+      select(teryt_woj_szk) %>% 
+      distinct() %>% 
+      mutate(
         nazwa = case_when(
-          teryt_woj %in% 2 ~ "dolnośląskie",
-          teryt_woj %in% 4 ~ "kujawsko-pomorskie",
-          teryt_woj %in% 6 ~ "lubelskie",
-          teryt_woj %in% 8 ~ "lubuskie",
-          teryt_woj %in% 10 ~ "łódzkie",
-          teryt_woj %in% 12 ~ "małopolskie",
-          teryt_woj %in% 14 ~ "mazowieckie",
-          teryt_woj %in% 16 ~ "opolskie",
-          teryt_woj %in% 18 ~ "podkarpackie",
-          teryt_woj %in% 20 ~ "podlaskie",
-          teryt_woj %in% 22 ~ "pomorskie",
-          teryt_woj %in% 24 ~ "śląskie",
-          teryt_woj %in% 26 ~ "świętokrzyskie",
-          teryt_woj %in% 28 ~ "warmińsko-mazurskie",
-          teryt_woj %in% 30 ~ "wielkopolskie",
-          teryt_woj %in% 32 ~ "zachodniopomorskie")
+          teryt_woj_szk %in% 2 ~ "dolnośląskie",
+          teryt_woj_szk %in% 4 ~ "kujawsko-pomorskie",
+          teryt_woj_szk %in% 6 ~ "lubelskie",
+          teryt_woj_szk %in% 8 ~ "lubuskie",
+          teryt_woj_szk %in% 10 ~ "łódzkie",
+          teryt_woj_szk %in% 12 ~ "małopolskie",
+          teryt_woj_szk %in% 14 ~ "mazowieckie",
+          teryt_woj_szk %in% 16 ~ "opolskie",
+          teryt_woj_szk %in% 18 ~ "podkarpackie",
+          teryt_woj_szk %in% 20 ~ "podlaskie",
+          teryt_woj_szk %in% 22 ~ "pomorskie",
+          teryt_woj_szk %in% 24 ~ "śląskie",
+          teryt_woj_szk %in% 26 ~ "świętokrzyskie",
+          teryt_woj_szk %in% 28 ~ "warmińsko-mazurskie",
+          teryt_woj_szk %in% 30 ~ "wielkopolskie",
+          teryt_woj_szk %in% 32 ~ "zachodniopomorskie")
       ) %>% 
       mutate(
         nazwa_dop = paste0(nazwa, "go"))
     
     odmiany <- odmiany %>% 
-      nest(.by = teryt_woj, .key = "odmiany")
+      nest(.by = teryt_woj_szk, .key = "odmiany")
     
     wskazniki <- wskazniki %>% 
-      left_join(odmiany, join_by(teryt_woj))
+      left_join(odmiany, join_by(teryt_woj_szk))
     
     return(wskazniki)
   }
