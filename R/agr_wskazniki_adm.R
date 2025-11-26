@@ -495,67 +495,46 @@ Z9_kont_mlod <- function(x, rok, mies = 9, nauka) {
 #' w których dochód był niezerowy. Następnie na tych indywidualnych wartościach
 #' liczone są statystyki opisowe dla zadanego poziomu agregacji.
 #' @param x ramka danych pośrednich P4
-#' @param tab_p3 ramka danych pośrednich P3
 #' @param nauka wartość TRUE/FALSE określająca czy status ma być liczony dla
 #' absolwentów uczących się czy nie uczących się
 #' @return list
-#' @importFrom dplyr %>% reframe
+#' @importFrom dplyr %>% summarise
 #' n_distinct
 #' @export
-W3_sr_doch_uop <- function(x, tab_p3, nauka, ROK = 2024) {
+W3_sr_doch_uop <- function(x, nauka) {
   stopifnot(
     is.data.frame(x),
-    is.data.frame(tab_p3),
     c("sr_wynagr_uop_nauka_r0_wrzgru", "sr_wynagr_uop_bez_nauki_r0_wrzgru") %in% names(x),
-    is.logical(nauka),
-    is.numeric(ROK)
+    is.logical(nauka)
   )
   
-  tab_p3 <- tab_p3 %>% 
-    filter(okres %in% data_na_okres(rok = ROK, mies = 12)) %>% 
-    select(id_abs, powiat_sr_wynagrodzenie)
-  
-  if (nrow(tab_p3) == 0) {
-    stop("Tabela P3 po odfiltrowaniu ma 0 wierszy.")
-  }
-
   if (nauka) {
-    x %>%
-      left_join(
-        tab_p3,
-        join_by(id_abs)
-      ) %>% 
-      mutate(wynagr_rel = sr_wynagr_uop_nauka_r0_wrzgru / powiat_sr_wynagrodzenie) %>% 
-      reframe(
-        n = n_distinct(id_abs),
-        sred = round(mean(wynagr_rel, na.rm = TRUE), 2),
-        q5 = unname(round(quantile(wynagr_rel, 0.05, na.rm = TRUE), 2)),
-        q25 = unname(round(quantile(wynagr_rel, 0.25, na.rm = TRUE), 2)),
-        med = unname(round(quantile(wynagr_rel, 0.5, na.rm = TRUE), 2)),
-        q75 = unname(round(quantile(wynagr_rel, 0.75, na.rm = TRUE), 2)),
-        q95 = unname(round(quantile(wynagr_rel, 0.95, na.rm = TRUE), 2))
+    x %>% 
+      summarise(
+        n = sum(!is.na(sr_wynagr_uop_nauka_r0_wrzgru), na.rm = TRUE),
+        sred = round(mean(sr_wynagr_uop_nauka_r0_wrzgru, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(sr_wynagr_uop_nauka_r0_wrzgru, 0.95, na.rm = TRUE), 2))
       ) %>%
       as.list() %>%
       return()
   } else {
-    x %>%
-      left_join(
-        tab_p3,
-        join_by(id_abs)
-      ) %>% 
-      mutate(wynagr_rel = sr_wynagr_uop_bez_nauki_r0_wrzgru / powiat_sr_wynagrodzenie) %>% 
-      reframe(
-        n = n_distinct(id_abs),
-        sred = round(mean(wynagr_rel, na.rm = TRUE), 2),
-        q5 = unname(round(quantile(wynagr_rel, 0.05, na.rm = TRUE), 2)),
-        q25 = unname(round(quantile(wynagr_rel, 0.25, na.rm = TRUE), 2)),
-        med = unname(round(quantile(wynagr_rel, 0.5, na.rm = TRUE), 2)),
-        q75 = unname(round(quantile(wynagr_rel, 0.75, na.rm = TRUE), 2)),
-        q95 = unname(round(quantile(wynagr_rel, 0.95, na.rm = TRUE), 2))
+    x %>% 
+      summarise(
+        n = sum(!is.na(sr_wynagr_uop_bez_nauki_r0_wrzgru), na.rm = TRUE),
+        sred = round(mean(sr_wynagr_uop_bez_nauki_r0_wrzgru, na.rm = TRUE), 2),
+        q5 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.05, na.rm = TRUE), 2)),
+        q25 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.25, na.rm = TRUE), 2)),
+        med = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.5, na.rm = TRUE), 2)),
+        q75 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.75, na.rm = TRUE), 2)),
+        q95 = unname(round(quantile(sr_wynagr_uop_bez_nauki_r0_wrzgru, 0.95, na.rm = TRUE), 2))
       ) %>%
       as.list() %>%
       return()
-    }
+  }
 }
 #' @title Wskaźniki zagregowane dla monitoringu karier - dane administracyjne
 #' @description Funkcja licząca na potrzeby szablonu raportu rozkład liczby

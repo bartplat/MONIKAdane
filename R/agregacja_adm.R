@@ -59,7 +59,7 @@ agreguj_1rokpo_adm <- function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
     cat("\nWskaźniki wykorzystujące P4: ", format(Sys.time(), "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     wskazniki_4 <- agreguj_wskazniki(
       wsk4, podzial_grupy,
-      przekazArgumenty = list("rok_abso" = rok_abso, "wsk2" = wsk2, "wsk3" = wsk3),
+      przekazArgumenty = list("rok_abso" = rok_abso, "wsk2" = wsk2),
       dane_szkoly = dane_szkoly(.data),
       l_abs = l_abs(.data),
       l_kobiet = l_kobiet(.data),
@@ -67,8 +67,8 @@ agreguj_1rokpo_adm <- function(wsk2, wsk3, wsk4, podzial_grupy, rok_abso) {
       E2_nauka_kontyn = E2_nauka_kontyn(.data),
       Z4_ucz = Z4_ods_prac_mies(.data, TRUE),
       Z4_nie_ucz = Z4_ods_prac_mies(.data, FALSE),
-      W3_ucz = W3_sr_doch_uop(.data, wsk3, TRUE, rok_abso),
-      W3_nie_ucz = W3_sr_doch_uop(.data, wsk3, FALSE, rok_abso),
+      W3_ucz = W3_sr_doch_uop(.data, TRUE),
+      W3_nie_ucz = W3_sr_doch_uop(.data, FALSE),
       B2_bezrob = B2_ods_bezrob(.data),
       liczebnosc_branze_ucz = liczebnosc_branze_ucz(.data),
       liczebnosc_branze_kont = rozklad_liczebnosc(.data, wsk2, rok_abso, 12, branza_kont, plc = NULL),
