@@ -28,6 +28,3 @@ Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku 
 dalszej części procesu przechodzenia od tabel pośrednich do generowania
 automatycznych raportów.
 }
-\seealso{
-\code{\link[=rozdziel_tabele]{rozdziel_tabele()}}
-}

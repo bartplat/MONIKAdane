@@ -14,6 +14,9 @@ export(dane_szkoly)
 export(data_na_okres)
 export(definicje_podzialu)
 export(dodaj_odmiany)
+export(is_dozwolone_wartosci)
+export(is_klasa_kolumny)
+export(is_wymagane_kolumny)
 export(l_abs)
 export(l_abs_zrodla)
 export(l_kobiet)
@@ -22,7 +25,6 @@ export(normal_windows_path)
 export(okres_na_date)
 export(okres_na_mies)
 export(okres_na_rok)
-export(parametry)
 export(plik_source)
 export(przygotuj_tabele_posrednie)
 export(rozklad_liczebnosc)
@@ -35,38 +37,46 @@ export(utworz_grupowanie_odn_teryt)
 export(uzupelnij_wynagrodzenie_powiat)
 export(zawody_status_S3)
 export(zlacz_partial)
-importFrom(MLASZdane,pobierz_dane_bdl)
-importFrom(MLASZdane,przeksztalc_dane_bdl)
-importFrom(MLASZdane,wskaznik_bdl)
-importFrom(dplyr,"%>%")
-importFrom(dplyr,.data)
-importFrom(dplyr,across)
-importFrom(dplyr,all_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,case_when)
-importFrom(dplyr,coalesce)
-importFrom(dplyr,count)
-importFrom(dplyr,cur_data)
-importFrom(dplyr,distinct)
-importFrom(dplyr,everything)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,join_by)
-importFrom(dplyr,lag)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n)
-importFrom(dplyr,n_distinct)
-importFrom(dplyr,pull)
-importFrom(dplyr,reframe)
-importFrom(dplyr,rename)
-importFrom(dplyr,row_number)
-importFrom(dplyr,select)
-importFrom(dplyr,slice_max)
-importFrom(dplyr,summarise)
-importFrom(dplyr,ungroup)
-importFrom(tibble,as_tibble)
-importFrom(tibble,is_tibble)
-importFrom(tidyr,nest)
-importFrom(tidyr,pivot_longer)
-importFrom(tidyr,pivot_wider)
+importFrom(MLASZdane,
+  pobierz_dane_bdl,
+  przeksztalc_dane_bdl,
+  wskaznik_bdl
+)
+importFrom(dplyr,
+  "%>%",
+  .data,
+  across,
+  all_of,
+  arrange,
+  case_when,
+  coalesce,
+  count,
+  cur_data,
+  distinct,
+  everything,
+  filter,
+  group_by,
+  join_by,
+  lag,
+  left_join,
+  mutate,
+  n,
+  n_distinct,
+  pull,
+  reframe,
+  rename,
+  row_number,
+  select,
+  slice_max,
+  summarise,
+  ungroup
+)
+importFrom(tibble,
+  as_tibble,
+  is_tibble
+)
+importFrom(tidyr,
+  nest,
+  pivot_longer,
+  pivot_wider
+)

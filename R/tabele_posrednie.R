@@ -10,9 +10,8 @@
 #' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
 #' samym rok monitoringu)
 #' @importFrom dplyr %>% filter group_by count filter pull select distinct
-#' left_join join_by coalesce all_of
+#'  left_join join_by coalesce all_of
 #' @return multiple `.RData` objects
-#' @seealso [rozdziel_tabele()]
 #' @export
 przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
                                        rok_ukonczenia = 2024) {
@@ -277,7 +276,7 @@ przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
 #' @return tabela pośrednia `p3`
 #' @importFrom tibble is_tibble
 #' @importFrom dplyr %>% rename mutate across select left_join join_by ungroup
-#' group_by lag arrange
+#'  group_by lag arrange
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @importFrom MLASZdane wskaznik_bdl pobierz_dane_bdl przeksztalc_dane_bdl
 #' @export

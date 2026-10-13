@@ -444,7 +444,7 @@ kolumny_tabele_posrednie <- function() {
   ))
 }
 #' @title Sprawdzanie poprawności nazewnictwa tabel pośrednich
-#' @description 
+#' @description Do uzupełnienia
 #' @param df obiekt-tabela pośrednia
 #' @param tabela_p rodzaj tabeli pośredniej
 #' @param force_zgodnosc_nazw wartość logiczna określająca czy nazwa obiektu
@@ -497,7 +497,7 @@ is_wymagane_kolumny <- function(df, tabela_p = c("p1", "p2", "p3", "p4", "p5", "
   }
 }
 #' @title Sprawdzanie poprawności oczekiwanych typów zmiennych tabel pośrednich
-#' @description 
+#' @description Do uzupełnienia
 #' @param df obiekt-tabela pośrednia
 #' @param tabela_p rodzaj tabeli pośredniej
 #' @param force_zgodnosc_nazw wartość logiczna określająca czy nazwa obiektu
@@ -559,7 +559,7 @@ is_klasa_kolumny <- function(df, tabela_p = c("p1", "p2", "p3", "p4", "p5", "p6"
 }
 #' @title Sprawdzanie poprawności oczekiwanych wartości zmiennych tabel
 #' pośrednich
-#' @description 
+#' @description Do uzupełnienia
 #' @param df obiekt-tabela pośrednia
 #' @param tabela_p rodzaj tabeli pośredniej
 #' @param force_zgodnosc_nazw wartość logiczna określająca czy nazwa obiektu

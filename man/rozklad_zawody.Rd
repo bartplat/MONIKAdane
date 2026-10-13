@@ -18,7 +18,7 @@ zawierająca analogiczne informacje oraz te same nazwy kolumn co tabela P2)}
 \item{mies}{miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
 to grudzień}
 
-\item{zmienna}{}
+\item{zmienna}{do uzupełnienia}
 }
 \value{
 list

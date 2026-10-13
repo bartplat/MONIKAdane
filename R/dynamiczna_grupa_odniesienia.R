@@ -49,7 +49,7 @@
 #' }
 #' @export
 #' @importFrom dplyr %>% .data across all_of case_when coalesce count cur_data
-#' distinct group_by left_join mutate rename select summarise
+#'   distinct group_by left_join mutate rename select summarise
 utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
                                        zmPominGrupaOdniesienia = any_of("id_szk"),
                                        idAbs = all_of(c("id_abs", "rok_abs")),

@@ -498,8 +498,7 @@ Z9_kont_mlod <- function(x, rok, mies = 9, nauka) {
 #' @param nauka wartość TRUE/FALSE określająca czy status ma być liczony dla
 #' absolwentów uczących się czy nie uczących się
 #' @return list
-#' @importFrom dplyr %>% summarise
-#' n_distinct
+#' @importFrom dplyr %>% summarise n_distinct
 #' @export
 W3_sr_doch_uop <- function(x, nauka) {
   stopifnot(
@@ -542,8 +541,7 @@ W3_sr_doch_uop <- function(x, nauka) {
 #' roku ukończenia szkoły.
 #' @param x ramka danych pośrednich P4
 #' @return list
-#' @importFrom dplyr %>% count filter arrange mutate select
-#' across
+#' @importFrom dplyr %>% count filter arrange mutate select across
 #' @export
 B2_ods_bezrob = function(x) {
   stopifnot(
@@ -713,10 +711,10 @@ rozklad_liczebnosc <- function(x, df_kont, ROK = 2024, mies = 12, zmienna, plc =
 #' @param ROK rok osiągnięcia statusu absolwenta
 #' @param mies miesiąc, dla którego ma być policzony wskaźnik - domyślnie jest
 #' to grudzień
-#' @param zmienna 
+#' @param zmienna do uzupełnienia
 #' @return list
 #' @importFrom dplyr %>% filter .data count mutate select left_join n_distinct
-#' slice_max join_by
+#'  slice_max join_by
 #' @importFrom tibble is_tibble
 #' @export
 rozklad_zawody <- function(x, df_kont, ROK = 2024, mies = 12, zmienna) {
