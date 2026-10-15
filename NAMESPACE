@@ -27,6 +27,7 @@ export(okres_na_mies)
 export(okres_na_rok)
 export(plik_source)
 export(przygotuj_tabele_posrednie)
+export(przygotuj_tabele_posrednie_fst)
 export(rozklad_liczebnosc)
 export(rozklad_zawody)
 export(skrypt_bat)
@@ -70,6 +71,10 @@ importFrom(dplyr,
   slice_max,
   summarise,
   ungroup
+)
+importFrom(fst,
+  read_fst,
+  write_fst
 )
 importFrom(tibble,
   as_tibble,

@@ -21,20 +21,23 @@ przygotuj_tabele_posrednie <- function(sciezka_tab_posrednie, sciezka_docelowa,
     czas_start = Sys.time()
     cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
     
-    stopifnot(is.character(sciezka_tab_posrednie),
-              is.character(sciezka_docelowa),
-              is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021,
-              grepl(".RData$", sciezka_tab_posrednie))
+    stopifnot(
+      is.character(sciezka_tab_posrednie),
+      is.character(sciezka_docelowa),
+      is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021,
+      grepl(".RData$", sciezka_tab_posrednie)
+    )
     
     # wczytywanie tabel
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęcie wczytywania obiektu z tabelami pośrednimi.", sep = "")
     obiekt_tabele <- load(sciezka_tab_posrednie)
     
-    if (!"p1" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p1"))
-    if (!"p2" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p2"))
-    if (!"p3" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p3"))
-    if (!"p4" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p4"))
-    if (!"p5" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p5"))
+    if (!"^p1" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p1"))
+    if (!"^p2" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p2"))
+    if (!"^p3" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p3"))
+    if (!"^p4" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p4"))
+    if (!"^p5" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p5"))
+    if (!"^p6" %in% ls()) stop(paste0("Bład: W pliku ze ścieżki \"", sciezka_tab_posrednie, "\" brakuje tabel pośrednich p6"))
     
     # zawężenie do aktualnego roku zostania absolwentem (rok_abs == rok_ukonczenia)
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zawężanie tabel pośrednich do bieżącej edycji monitoringu, czyli do ",
@@ -409,3 +412,191 @@ uzupelnij_wynagrodzenie_powiat <- function(tabela_p3,
     }
   }
 }
+#' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
+#' @description
+#' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
+#' dalszej części procesu przechodzenia od tabel pośrednich do generowania
+#' automatycznych raportów. 
+#' @param sciezka_tab_posrednie ścieżka w formacie tekstowym, w ktorej znajdują
+#' się tabele pośrednie
+#' @param sciezka_docelowa ścieżka w formacie tekstowym, w ktorej mają być
+#' zapisane surowe tabele pośrednie
+#' @param rok_ukonczenia rok, którym absolwent ukończył szkołę (jest to tym
+#' samym rok monitoringu)
+#' @importFrom dplyr %>% filter group_by count filter pull select distinct
+#'  left_join join_by coalesce all_of
+#' @importFrom fst read_fst write_fst 
+#' @return `.fst` files
+#' @export
+przygotuj_tabele_posrednie_fst <- function(
+    sciezka_tab_posrednie,
+    sciezka_docelowa,
+    rok_ukonczenia = 2024
+    ) {
+  tryCatch({
+    log_file = paste0("przygotuj_tabele_posrednie_logfile_", format(Sys.time(), "%Y%m%d_%H%M"), ".txt")
+    sink(log_file, split = TRUE)
+    czas_start = Sys.time()
+    cat("\nStart: ", format(czas_start, "%Y.%m.%d %H:%M:%S"), "\n", sep = "")
+    
+    stopifnot(
+      is.character(sciezka_tab_posrednie),
+      is.character(sciezka_docelowa),
+      is.numeric(rok_ukonczenia) & rok_ukonczenia > 2021
+    )
+    
+    # wczytywanie tabel
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęcie wczytywania tabel pośrednich.", sep = "")
+    
+    sciezki_plikow <- list.files(
+      path = sciezka_tab_posrednie,
+      pattern = paste0("^p[1-6]", "\\.fst$"),
+      full.names = TRUE
+    )
+    
+    lista_tabel <- setNames(
+      lapply(sciezki_plikow, read_fst),
+      tools::file_path_sans_ext(basename(sciezki_plikow))
+    )
+    
+    list2env(lista_tabel, envir = environment())
+    
+    for (i in 1:length(lista_tabel)) {
+      prefix <- paste0("^p", i)
+      if (!any(grepl(prefix, names(lista_tabel)))) {
+        stop(paste0("Błąd: W ścieżce \"", sciezka_tab_posrednie, "\" brakuje tabeli pośredniej p", i))
+      }
+    }
+    
+    # zawężenie do aktualnego roku zostania absolwentem (rok_abs == rok_ukonczenia)
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zawężanie tabel pośrednich do bieżącej edycji monitoringu, czyli do ",
+        rok_ukonczenia + 1, " roku (absolwenci z rocznika ", rok_ukonczenia, ").",
+        sep = "")
+    p1 <- p1[p1$rok_abs %in% rok_ukonczenia,]
+    if (nrow(p1) == 0) stop(paste0("\nBłąd: Tabela p1, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p2 <- p2[p2$rok_abs %in% rok_ukonczenia,]
+    if (nrow(p2) == 0) stop(paste0("\nBłąd: Tabela p2, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p3 <- p3[p3$rok_abs %in% rok_ukonczenia,]
+    if (nrow(p3) == 0) stop(paste0("\nBłąd: Tabela p3, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p4 <- p4[p4$rok_abs %in% rok_ukonczenia,]
+    if (nrow(p4) == 0) stop(paste0("\nBłąd: Tabela p4, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p5 <- p5[p5$rok_abs %in% rok_ukonczenia,]
+    if (nrow(p5) == 0) stop(paste0("\nBłąd: Tabela p5, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    
+    # dodawanie zmiennych grupujących do `p3` i `p2`
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
+    zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "teryt_pow_szk", "nazwa_zaw", "branza", "plec")
+    p3 <- p3 |>
+      left_join(p4 |> select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
+                join_by(id_abs, rok_abs))
+    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p3 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
+    p2 <- p2 |> 
+      left_join(p4 |> select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p2)))),
+                join_by(id_abs, rok_abs))
+    if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p2 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
+    
+    # przypomnienie o rekodowaniu zawodów eksperymentalnych
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Sprawdzanie czy w zmiennej `p4$branza` występują braki danych.", sep = "")
+    branze_braki <- NULL
+    branza_na <- p4 |>
+      select(id_abs, id_szk, nazwa_zaw, branza) |>
+      filter(!is.na(p4$nazwa_zaw) & is.na(p4$branza))
+    if (nrow(branza_na > 0)) {
+      if (!"brakujace_branze.csv" %in% list.files()) {
+        branza_na <- branza_na |>
+          select(nazwa_zaw, branza) |>
+          distinct()
+        write.csv2(branza_na, "brakujace_branze.csv", row.names = FALSE)
+        cat("\nLista zawodów z brakującymi branżami została zapisana do pliku \"brakujace_branze.csv\".\n")
+        branze_braki <- paste0("* ", nrow(branza_na), " absolwentów ma przypisany zawód, ale nie ma przypisanej branży. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie.")
+      } else {
+        branza_na <- read.csv2("brakujace_branze.csv")
+        stopifnot(is.data.frame(branza_na),
+                  c("nazwa_zaw", "branza") %in% names(branza_na))
+        if (sum(is.na(branza_na$branza)) != 0) {
+          branze_braki <- "* Znaleziono plik \"brakujace_branze.csv\", ale zawiera on braki danych w kolumnie `branza`. Nazwy branż należy uzupełnić, aby kontynuować przetwarzanie."
+        } else {
+          p4 <- p4 |>
+            left_join(branza_na,
+                      join_by(nazwa_zaw)) |> 
+            mutate(branza = coalesce(branza.x, branza.y), .keep = "unused")
+          
+          cat("\nBraki danych w zmiennej `p4$branza` zostały uzupełnione na podstawie \"brakujace_branze.csv\".")
+        }
+      }
+    } else {
+      cat("\nW zmiennej `p4$branza` nie było braków danych.")
+    }
+    
+    # usuwanie twardych spacji w nazwach zawodów
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Usuwanie twardych spacji w nazwach zawodów.", sep = "")
+    p4$nazwa_zaw <- gsub("\u00A0", " ", p4$nazwa_zaw, fixed = TRUE)
+    p4$nazwa_zaw <- trimws(p4$nazwa_zaw)
+    
+    # dodawanie zmiennej `adres_szk` do p6
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` do p6.", sep = "")
+    p6 <- p6 |>
+      mutate(
+        across(
+          nr_lokalu,
+          ~ifelse(. == "-" | is.na(.), paste0(""), .)
+        )
+      ) |>
+      mutate(
+        adres_szk = ifelse(
+          is.na(ulica),
+          paste0(miejscowosc, " ", pna, ", ", poczta),
+          paste0(ulica,
+                 ifelse(
+                   nr_lokalu == "" | is.na(nr_lokalu), 
+                   paste0(", "),
+                   paste0("/", nr_lokalu, ", ")
+                 ), 
+                 pna,
+                 " ",
+                 poczta)
+        )
+      )
+    cat(
+      "\n",
+      "Dodano zmienną `adres_szk` do p6.\nLiczba braków danych: ",
+      sum(is.na(p6$adres_szk)),
+      sep = ""
+    )
+    
+    # dodawanie zmiennej z adresem i nazwą do p4
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` i `nazwa_szk` do p4.", sep = "")
+    p4 <- p4 |>
+      left_join(
+        p6 |> select(id_szk, nazwa_szk, adres_szk) |>distinct(),
+        join_by(id_szk)
+      )
+    stopifnot(
+      c("adres_szk", "nazwa_szk") %in% names(p4)
+    )
+    
+    # zapis
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Rozpoczęto zapisywanie tabel pośrednich.", sep = "")
+    tab_p <- list(p1 = p1, p2 = p2, p3 = p3, p4 = p4, p5 = p5, p6 = p6)
+    
+    lapply(names(tab_p), function(p) {
+      sciezka <- file.path(sciezka_docelowa, paste0(p, ".fst"))
+      write_fst(tab_p[[p]], sciezka, compress = 50)
+    })
+    cat("\n", format(Sys.time(), "%H:%M:%S"), " - Zapisano tabele pośrednie do plików `.fst`.", sep = "")
+
+    czas_stop <- Sys.time()
+    czas_roznica<- round(czas_stop - czas_start, 2)
+    cat("\nKoniec: ", format(czas_stop, "%Y.%m.%d %H:%M:%S"), "\nCzas działania funkcji: ", paste(as.numeric(czas_roznica), attr(czas_roznica, "units")), "\n", sep = "")
+  },
+  error = function(e) {
+    cat("\nSkrypt zwrócił błąd: \n", conditionMessage(e), "\n", sep = "")
+    cat("\nTraceback:\n")
+    traceback()},
+  finally = {
+    sink()
+    message("Zamknięto plik log.")}
+  )
+  # file.show(log_file, title = "Plik log")
+}
+
