@@ -114,22 +114,22 @@ utworz_grupowanie_odn_teryt = function(x, zmGrupujace, ...,
   grupy <- x %>%
     count(across(all_of(c(zmGrupujace, zmTerytPow, "podregion", "teryt_woj_szk"))),
           name = "nGr") %>%
-    mutate(grupa = cur_data() %>%
+    mutate(grupa = pick(everything()) %>%
              select(all_of(zmGrupujace)) %>%
              utworz_warunki(),
-           odniesieniePow = cur_data() %>%
+           odniesieniePow = pick(everything()) %>%
              select(all_of(c(zmGrupujace, zmTerytPow)),
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki(),
-           odniesieniePodreg = cur_data() %>%
+           odniesieniePodreg = pick(everything()) %>%
              select(all_of(c(zmGrupujace, "podregion")),
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki(),
-           odniesienieWoj = cur_data() %>%
+           odniesienieWoj = pick(everything()) %>%
              select(all_of(c(zmGrupujace, "teryt_woj_szk")),
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki(),
-           odniesienieOgpol = cur_data() %>%
+           odniesienieOgpol = pick(everything()) %>%
              select(all_of(zmGrupujace),
                     -all_of(zmPominGrupaOdniesienia)) %>%
              utworz_warunki())
