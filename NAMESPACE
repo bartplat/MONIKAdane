@@ -36,6 +36,7 @@ export(skrypty_podzial)
 export(status_S3_mies)
 export(utworz_grupowanie_odn_teryt)
 export(uzupelnij_wynagrodzenie_powiat)
+export(zapis_danych_fst)
 export(zawody_status_S3)
 export(zlacz_partial)
 importFrom(MLASZdane,

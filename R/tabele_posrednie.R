@@ -1,3 +1,98 @@
+#' @title Funkcja zapisująca tabele pośrednie w szybkim formacie `.fst`
+#' @description
+#' Funkcja służy do zapisu tabel pośrednich z formatu `.RData`, w którym je
+#' otrzymujemy do dużo szybszego formatu `.fst`. Dodatkową opcją jest możliwość
+#' zawężenia danych do określonych województw - np. na potrzeby testowania 
+#' @details
+#' Funkcja może służyć do dwóch celów:
+#' 1. Przede wszystkim, do zapisu pełnych tabel pośrednich w formacie `.fst`
+#' 2. Dodatkowo, można ja wykorzystać do zapisu okrojonych danych testowych.
+#' Okrojonych zarówno do województw jak i tabel od p1 do p6.
+#' @param sciezka_tabele_posrednie_raw ścieżka prowadząca do tabel pośrednich w
+#' formacie `RData` - zazwyczaj plik typu "tabele-pośrednie-2026-bez-dupl.RData"
+#' @param docelowa_sciezka ciąg znaków będący ścieżką do pliku, w której ma
+#' być zapisany plik `.fst`
+#' @param kompresja poziom kompresji pliku `.fst` przy zapisie. Dopuszczalne
+#' wartości to od 0 do 100, gdzie 0 - brak kompresji, a 100 - kompresja
+#' całkowita.
+#' @param test wartość logiczna opisująca czy zapisana wersja tabel ma być na
+#' potrzeby testów (tabele okrojone do 3 województw)
+#' @param wojewodztwa ciąg znaków określający jakie województwa z tabel
+#' pośrednich mają zostać zapisane na potrzeby **testowych** tabel pośrednich.
+#' @importFrom fst write_fst
+#' @export
+zapis_danych_fst <- function(
+    sciezka_tabele_posrednie_raw,
+    docelowa_sciezka,
+    kompresja = 50,
+    test = FALSE,
+    wojewodztwa = c("mazowieckie", "śląskie", "wielkopolskie")
+) {
+  stopifnot(
+    is.character(sciezka_tabele_posrednie_raw),
+    is.character(docelowa_sciezka),
+    is.numeric(kompresja) & kompresja %in% c(0:100),
+    is.logical(test),
+    is.character(wojewodztwa) & length(wojewodztwa) > 0
+  )
+  
+  tabp_env <- new.env()
+  load(sciezka_tabele_posrednie_raw, envir = tabp_env)
+  
+  if (test) {
+    nazwy_wojewodztw <- c(
+      "dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie", "łódzkie",
+      "małopolskie", "mazowieckie", "opolskie", "podkarpackie", "podlaskie",
+      "pomorskie", "śląskie", "świętokrzyskie", "warmińsko-mazurskie", "wielkopolskie",
+      "zachodniopomorskie" 
+    )
+    
+    rok_ukonczenia <- 2024
+    
+    stopifnot(
+      any(wojewodztwa %in% nazwy_wojewodztw),
+      is.numeric(rok_ukonczenia) & rok_ukonczenia > 0
+    )
+    names_tab_p <- paste0("p", 1:6)
+    
+    all_exist <- all(sapply(names_tab_p, exists, envir = tabp_env))
+    if (!all_exist) stop("Plik, na podstwie którego mają powstać tabele pośrednie musi zawierać wszystkie tabele: od p1 do p6.")
+    
+    evalq({
+      p4 <- subset(p4, rok_abs == rok_ukonczenia & nazwa_woj_szk %in% wojewodztwa)
+      
+      id_abs_p4 <- p4$id_abs
+      id_szk_p4 <- p4$id_szk
+      
+      for (p in c("p1", "p2", "p3", "p5")) {
+        assign(p, subset(get(p), rok_abs == rok_ukonczenia & id_abs %in% id_abs_p4))
+      }
+      
+      p6 <- subset(p6, id_szk %in% id_szk_p4)
+      
+      rm(id_abs_p4, id_szk_p4)
+    }, envir = tabp_env)
+    
+    tab_p <- mget(names_tab_p, envir = tabp_env)
+    
+    invisible(lapply(names(tab_p), function(p) {
+      sciezka <- file.path(docelowa_sciezka, paste0(p, ".fst"))
+      write_fst(tab_p[[p]], sciezka, compress = 50)
+    }))
+  } else {
+    names_tab_p <- paste0("p", 1:9)
+    
+    all_exist <- all(sapply(names_tab_p, exists, envir = tabp_env))
+    if (!all_exist) stop("Plik, na podstwie którego mają powstać tabele pośrednie musi zawierać wszystkie tabele: od p1 do p9.")
+    
+    tab_p <- mget(names_tab_p, envir = tabp_env)
+    
+    invisible(lapply(names(tab_p), function(p) {
+      sciezka <- file.path(docelowa_sciezka, paste0(p, ".fst"))
+      write_fst(tab_p[[p]], sciezka, compress = 50)
+    }))
+  }
+}
 #' @title Funkcje przekształcające surowe tabele pośrednie - Monitoring Karier
 #' @description
 #' Funkcja przekształcająca surowe tabele pośrednie do formy gotowej do użytku w
@@ -482,16 +577,23 @@ przygotuj_tabele_posrednie_fst <- function(
     if (nrow(p4) == 0) stop(paste0("\nBłąd: Tabela p4, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
     p5 <- p5[p5$rok_abs %in% rok_ukonczenia,]
     if (nrow(p5) == 0) stop(paste0("\nBłąd: Tabela p5, po zawężeniu do absolwentów z roku ", rok_ukonczenia, " ma 0 wierszy!"))
+    p6 <- p6 |> 
+      mutate(rok_koniec = as.numeric(sub(".*/", "", rok_szk))) %>%
+      filter(rok_koniec == rok_ukonczenia) %>%
+      select(-rok_koniec)
+    if (nrow(p6) == 0) stop("\nBłąd: Tabela p6, po zawężeniu ma 0 wierszy!")
     
-    # dodawanie zmiennych grupujących do `p3` i `p2`
+    # dodawanie zmiennych grupujących (m.in. podregionów) do `p3` i `p2`
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennych grupujących do tabel pośrednich `p3` i `p2`.", sep = "")
     zmienneGrupujace <- c("id_szk", "id_abs", "rok_abs", "typ_szk", "teryt_woj_szk", "teryt_pow_szk", "nazwa_zaw", "branza", "plec")
+    p4 <- p4 |> 
+      rename(podregion = nazwa_podreg_szk)
     p3 <- p3 |>
-      left_join(p4 |> select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p3)))),
+      left_join(p4 |> select(id_abs, rok_abs, podregion, all_of(setdiff(zmienneGrupujace, names(p3)))),
                 join_by(id_abs, rok_abs))
     if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p3 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
     p2 <- p2 |> 
-      left_join(p4 |> select(id_abs, rok_abs, all_of(setdiff(zmienneGrupujace, names(p2)))),
+      left_join(p4 |> select(id_abs, rok_abs, podregion, all_of(setdiff(zmienneGrupujace, names(p2)))),
                 join_by(id_abs, rok_abs))
     if (length(setdiff(zmienneGrupujace, names(p3))) > 0) stop(paste0("\nW tabeli p2 brakuje zmiennych: ", setdiff(zmienneGrupujace, names(p3))))
     
@@ -559,7 +661,7 @@ przygotuj_tabele_posrednie_fst <- function(
       )
     cat(
       "\n",
-      "Dodano zmienną `adres_szk` do p6.\nLiczba braków danych: ",
+      "Dodano zmienną `adres_szk` do p6.\nLiczba braków danych tej zmiennej: ",
       sum(is.na(p6$adres_szk)),
       sep = ""
     )
@@ -568,7 +670,7 @@ przygotuj_tabele_posrednie_fst <- function(
     cat("\n", format(Sys.time(), "%H:%M:%S"), " - Dodawanie zmiennej `adres_szk` i `nazwa_szk` do p4.", sep = "")
     p4 <- p4 |>
       left_join(
-        p6 |> select(id_szk, nazwa_szk, adres_szk) |>distinct(),
+        p6 |> select(id_szk, nazwa_szk, adres_szk) |> distinct(),
         join_by(id_szk)
       )
     stopifnot(
